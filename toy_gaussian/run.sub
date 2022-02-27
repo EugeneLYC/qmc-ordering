@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --job-name=qmc
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --mem=8G
+#SBATCH --partition=desa
+#SBATCH --gres=gpu:0
+#SBATCH -o qmc_%j.out                  # Name of stdout output log file (%j expands to jobID)
+#SBATCH -e qmc_%j.err                  # Name of stderr output log file (%j expands to jobID)
+
+python3 qmc.py
