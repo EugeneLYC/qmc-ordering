@@ -1,0 +1,14 @@
+*.pyc
+*~
+*.err
+*.out
+*.log
+*__pycache__/
+data/
+*.edu
+*.so
+*.sub
+
+# Dev/IDE data
+.code-workspace
+.theia

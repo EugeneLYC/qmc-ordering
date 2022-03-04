@@ -2,8 +2,8 @@ model=logistic_regression
 dataset=mnist
 epochs=100
 bsz=128
-lr=0.1
-stype=RR
+lr=0.01
+stype=ZO
 
 run_cmd="python3 main.py --model=${model} \
         --dataset=${dataset} \
@@ -14,8 +14,8 @@ run_cmd="python3 main.py --model=${model} \
         --momentum=0.9 \
         --weight_decay=1e-4 \
         --log_metric \
-        --use_projection \
-        --use_data_augmentation
+        --use_tensorboard \
+        --zo_batch_size=1
         "
 
 echo ${run_cmd}
