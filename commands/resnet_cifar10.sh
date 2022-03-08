@@ -5,24 +5,22 @@ bsz=128
 lr=0.1
 stype=RR
 
-JOB_NAME=stype_${stype}
+base_dir=`pwd`
 
 run_cmd="python3 main.py --model=${model} \
         --dataset=${dataset} \
+        --data_path=${base_dir} \
         --epochs=${epochs} \
         --batch_size=${bsz} \
         --lr=${lr} \
         --shuffle_type=${stype} \
         --momentum=0.9 \
         --weight_decay=1e-4 \
-        --use_uniform_da \
-        --use_qr_decomposition_sort \
-        --start_greedy=100 \
-        --use_fuse_tensor \
-        &> ${JOB_NAME}.log
+        --use_tensorboard \
+        --tensorboard_path=${base_dir} \
+        --workers=4 \
+        --use_qmc_da
         "
-
-cd ..
 
 echo ${run_cmd}
 eval ${run_cmd}
