@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import torch
+from .constants import *
 
 def get_criterion(args):
-    if args.model == 'logistic_regression':
+    if args.model == _LOGISTIC_REGRESSION_:
         criterion = torch.nn.CrossEntropyLoss()
-    elif args.model == 'lenet':
+    elif args.model == _LENET_:
         criterion = torch.nn.functional.nll_loss()
-    elif 'resnet' in args.model:
+    elif args.model == _RESNET20_:
         criterion = torch.nn.CrossEntropyLoss()
     else:
         raise NotImplementedError("Unrecognized task")
@@ -15,16 +16,6 @@ def get_criterion(args):
     return criterion
 
 def get_optimizer(args, model):
-    # fuse the tensor
-    # params = [
-    #     {
-    #         "params": [value],
-    #         "name": key,
-    #         "param_size": value.size(),
-    #         "nelement": value.nelement(),
-    #     }
-    #     for key, value in model.named_parameters()
-    # ]
     return torch.optim.SGD(params=model.parameters(),
                             lr=args.lr,
                             momentum=args.momentum,

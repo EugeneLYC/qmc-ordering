@@ -1,11 +1,12 @@
 import torch
+from ..constants import *
 from sklearn import random_projection
 
 def _load_batch(args, input, target):
     if args.use_cuda:
         input = input.cuda()
         target = target.cuda()
-    if args.dataset == 'mnist':
+    if args.dataset == _MNIST_:
         # additionally reshaping the mnist input for compatability
         input = input.reshape(-1, 784)
     return input, target

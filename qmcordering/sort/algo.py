@@ -164,5 +164,4 @@ class ZerothOrderGreedySort(Sort):
                         orders[cur_id] += i
                         cur_sum = (cur_sum * (i-1) + X_perturbed[cur_id]) / i
         orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
-        print(orders)
         return orders

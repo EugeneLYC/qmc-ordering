@@ -1,16 +1,18 @@
 import torch
-from .models import LeNet, resnet
+from .constants import *
 
 def get_model(args):
-    if args.model == 'logistic_regression':
-        if args.dataset == 'mnist':
+    if args.model == _LOGISTIC_REGRESSION_:
+        if args.dataset == _MNIST_:
             model = torch.nn.DataParallel(torch.nn.Linear(784, 10))
         else:
             raise NotImplementedError("Currently only MNIST is supported for this model")
-    elif args.model == 'lenet':
+    elif args.model == _LENET_:
+        from .models import LeNet
         model = torch.nn.DataParallel(LeNet())
-    elif args.model == 'resnet20':
-        if args.dataset == 'cifar10':
+    elif args.model == _RESNET20_:
+        if args.dataset == _CIFAR10_:
+            from .models import resnet
             model = torch.nn.DataParallel(resnet.__dict__[args.model]())
         else:
             raise NotImplementedError("Currently only CIFAR10 is supported for this model")

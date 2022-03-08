@@ -3,6 +3,7 @@ import time
 import numpy as np
 from contextlib import contextmanager
 from io import StringIO
+from .constants import *
 from .sort.utils import _load_batch, compute_avg_grad_error
 
 class AverageMeter(object):
@@ -49,9 +50,9 @@ def train(args,
     train_batches = list(enumerate(train_loader))
     if sorter is not None:
         with timer("sorting", epoch=epoch):
-            if args.shuffle_type == 'greedy':
+            if args.shuffle_type == _STALE_GRAD_SORT_:
                 orders = sorter.sort(epoch)
-            elif args.shuffle_type == 'ZO':
+            elif args.shuffle_type == _ZEROTH_ORDER_SORT_:
                 orders = sorter.sort(epoch, model, criterion, train_loader)
     else:
         orders = {i:0 for i in range(len(train_batches))}
@@ -88,7 +89,7 @@ def train(args,
             optimizer.zero_grad()
             loss.backward()
 
-        if sorter is not None and args.shuffle_type == 'greedy':
+        if sorter is not None and args.shuffle_type == _STALE_GRAD_SORT_:
             with timer("sorting", epoch=epoch):
                 sorter.update_stale_grad(optimizer, i, epoch)
         
