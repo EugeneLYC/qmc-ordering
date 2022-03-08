@@ -1,4 +1,4 @@
-from .sort.algo import StaleGradGreedySort
+from .sort.algo import StaleGradGreedySort, ZerothOrderGreedySort
 
 def get_sorter(args,
             loader,
@@ -7,6 +7,12 @@ def get_sorter(args,
     if args.shuffle_type == 'greedy':
         num_batches = len(list(enumerate(loader)))
         sorter = StaleGradGreedySort(args,
+                                    num_batches,
+                                    grad_dimen=dimension,
+                                    timer=timer)
+    elif args.shuffle_type == 'ZO':
+        num_batches = len(list(enumerate(loader)))
+        sorter = ZerothOrderGreedySort(args,
                                     num_batches,
                                     grad_dimen=dimension,
                                     timer=timer)

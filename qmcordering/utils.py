@@ -49,7 +49,10 @@ def train(args,
     train_batches = list(enumerate(train_loader))
     if sorter is not None:
         with timer("sorting", epoch=epoch):
-            orders = sorter.sort(epoch)
+            if args.shuffle_type == 'greedy':
+                orders = sorter.sort(epoch)
+            elif args.shuffle_type == 'ZO':
+                orders = sorter.sort(epoch, model, criterion, train_loader)
     else:
         orders = {i:0 for i in range(len(train_batches))}
 

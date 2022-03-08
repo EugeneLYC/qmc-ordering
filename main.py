@@ -12,10 +12,10 @@ def _build_task_name(args):
                 '_SFTYPE-' + args.shuffle_type + \
                 '_SEED-' + str(args.seed)
     task_name = task_name + '_lr-' + str(args.lr)
+    if args.use_qmc_da:
+        task_name = 'QMCDA' + task_name
     if args.shuffle_type == 'ZO':
         task_name = task_name + '_ZOBSZ-' + str(args.zo_batch_size)
-    if args.use_qmc_da or args.use_sample_aware_transform:
-        task_name = task_name + '_SOBOL-' + args.sobol_type
     return task_name
 
 def main():
@@ -53,7 +53,7 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch
-        lr_scheduler.step()
+        loaders['trainset'].update(epoch)
         train(args,
             loaders['train'],
             model,
@@ -63,6 +63,7 @@ def main():
             logger,
             timer=timer,
             sorter=sorter)
+        lr_scheduler.step()
 
         # evaluate on validation set
         validate(args,

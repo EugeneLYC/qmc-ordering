@@ -8,6 +8,7 @@ data/
 *.edu
 *.so
 *.sub
+*.nfs*
 
 # Dev/IDE data
 .code-workspace

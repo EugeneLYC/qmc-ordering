@@ -43,6 +43,7 @@ def unit_interval_to_categorical(x, K):
     else:
         return c
 
+
 class QuasiCIFAR10:
     def __init__(self, cifar10: datasets.CIFAR10, transform, args) -> None:
         self.cifar10 = cifar10
@@ -59,13 +60,17 @@ class QuasiCIFAR10:
         else:
             raise NotImplementedError
         self.sample_visited = {i:0 for i in range(50000)}
+    
+    def update(self, epoch):
+        self.epoch = epoch
 
 
     def __getitem__(self, index: int):
         if self.args.sobol_type == 'independent':
             x = self.sobolengs[index].draw()[0]
         elif self.args.sobol_type == 'overlap':
-            x = self.sobolengs[index + self.sample_visited[index]]
+            # x = self.sobolengs[index + self.sample_visited[index]]
+            x = self.sobolengs[index + self.epoch]
         elif self.args.sobol_type == 'identical':
             x = self.sobolengs[self.sample_visited[index]]
         else:

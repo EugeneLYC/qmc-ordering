@@ -83,11 +83,6 @@ def get_args():
                         metavar='N',
                         help='random seed used in the experiment')
     
-    parser.add_argument('--log_tune_seeds',
-                        default=False,
-                        action='store_true',
-                        help='log the seeds results in a txt file for consistent results')
-    
     parser.add_argument('--use_tensorboard',
                         default=False,
                         action='store_true',
@@ -151,32 +146,5 @@ def get_args():
                         action='store_true',
                         help='whether to use qmc based data augmentation (now for cifar)')
     
-    parser.add_argument('--use_sample_aware_transform',
-                        default=False,
-                        action='store_true',
-                        help='whether to use sample aware transform in the dataset loading')
-    
-    parser.add_argument('--use_sobol_naive',
-                        default=False,
-                        action='store_true',
-                        help='whether to use sample aware transform in the dataset loading')
-    
-    parser.add_argument('--use_sobol_corr',
-                        default=False,
-                        action='store_true',
-                        help='whether to use sample aware transform in the dataset loading')
-
-    # sobol sequence related argument
-    parser.add_argument('--sobol_type',
-                        default='overlap',
-                        choices=['independent', 'overlap', 'identical'],
-                        type=str,
-                        help='sobol_type used for generating low-discrepency sequence (choose from independent, overlap, identical)')
-
-    parser.add_argument('--use_self_timer',
-                        default=True,
-                        action='store_true',
-                        help='whether to use self-written timer to time different parts (default: True)')
-
     args = parser.parse_args()
     return args

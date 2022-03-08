@@ -3,7 +3,7 @@ dataset=mnist
 epochs=100
 bsz=128
 lr=0.01
-stype=greedy
+stype=ZO
 
 base_dir=`pwd`
 
@@ -19,7 +19,7 @@ run_cmd="python3 main.py --model=${model} \
         --log_metric \
         --use_tensorboard \
         --tensorboard_path=${base_dir} \
-        --zo_batch_size=128
+        --zo_batch_size=256
         "
 
 echo ${run_cmd}

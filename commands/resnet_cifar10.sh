@@ -3,7 +3,7 @@ dataset=cifar10
 epochs=200
 bsz=128
 lr=0.1
-stype=greedy
+stype=RR
 
 JOB_NAME=stype_${stype}
 
