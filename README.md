@@ -10,16 +10,24 @@ This repository contains the source code for the empirical results in our [ICLR'
 * QMC-based data augmentation.
   
 ## 1. Example Ordering with Greedy Sorting
-One of the key insights from our [paper](https://openreview.net/pdf?id=7gWSJrP3opB) is that: if the examples are ordered in a way such that the averages of consecutive example gradients converge faster to the full gradient, then running SGD with such ordering will enjoy a faster convergence rate. Given this insight, we propose a greedy selection algorithm that can minimizes a metric named *Averaged Gradient Error*, which allows us to use better example ordering at the beginning of each epoch. Informally, we store the gradients computed for each mini-batch from the previous epoch, and then launch a sorting process over these gradients. To optimize the space/time complexity for the sorting, we additionally provide the optimization with random projection and QR decomposition. We provide an example script in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) with logistic regression on MNIST. One can run it with
+### 1.1 Example-Ordered SGD via Greedily Minimizing Average Gradient Error
+One of the key insights from our [paper](https://openreview.net/pdf?id=7gWSJrP3opB) is that: if the examples are ordered in a way such that the averages of consecutive example gradients converge faster to the full gradient, then running SGD with such ordering will enjoy a faster convergence rate. Given this insight, we propose a greedy selection algorithm that can minimizes a metric named *Averaged Gradient Error* ([Equation 2](https://openreview.net/pdf?id=7gWSJrP3opB)), which allows us to use better example ordering at the beginning of each epoch. 
+
+Detailed pseudo-code can be found in Algorithm 1 in our [paper](https://openreview.net/pdf?id=7gWSJrP3opB). Informally, we store the gradients computed for each mini-batch from the previous epoch, and then launch a sorting process over these gradients. To optimize the space/time complexity for the sorting, we additionally provide techniques of random projection and QR decomposition. We provide an example script in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) with logistic regression on MNIST. One can run it with
 ```
 bash commands/lg_mnist.sh
 ```
+### 1.2 Build Customized Sorting Algorithm
+Aside from the algorithm provided in the paper, users can construct arbitrary sorting algorithm via the sort APIs.
 
 ## 2. QMC-based Data Augmentation
+### 2.1 Examples from the paper
 The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). We provide an example script in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) with Resnet20 on CIFAR10. One can run it with
 ```
 bash commands/resnet_cifar10.sh
 ```
+### 2.2 Build Customized QMC-based Data Augmentation
+We provide APIs for customized data augmentation.
 
 
 ## 3. Citation

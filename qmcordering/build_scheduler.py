@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import torch
-from .constants import *
+from .constants import _CIFAR10_, _CIFAR100_, _LOGISTIC_REGRESSION_, _LENET_, _RESNET_
 
 def get_lr_scheduler(args, optimizer):
     if _RESNET_ in args.model:

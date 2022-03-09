@@ -1,3 +1,4 @@
+import os
 import six
 import math
 import lmdb
@@ -9,8 +10,6 @@ import torch
 import torch.utils.data as data
 import torchvision.datasets as datasets
 from torchvision.transforms import functional as F
-
-from ..constants import *
 
 def unit_interval_to_categorical(x, K):
     c = int(math.floor(K * float(x)))
@@ -94,7 +93,7 @@ class CIFAR100:
 class ImageFolderLMDB(data.Dataset):
     def __init__(self, db_path, transform=None, target_transform=None):
         self.db_path = db_path
-        self.env = lmdb.open(db_path, subdir=osp.isdir(db_path),
+        self.env = lmdb.open(db_path, subdir=os.path.isdir(db_path),
                              readonly=True, lock=False,
                              readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
@@ -144,7 +143,7 @@ class ImageNet:
         self.transform = transform
         self.state = 0
         self.args = args
-        self.sobolengs = torch.quasirandom.SobolEngine(dimension=4, scramble=True).draw(65536)
+        self.sobolengs = torch.quasirandom.SobolEngine(dimension=5, scramble=True).draw(65536)
     
     def update(self, epoch):
         self.epoch = epoch

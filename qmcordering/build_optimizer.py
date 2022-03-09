@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import torch
-from .constants import *
+from .constants import _LOGISTIC_REGRESSION_, _LENET_, _RESNET20_
 
 def get_criterion(args):
     if args.model == _LOGISTIC_REGRESSION_:

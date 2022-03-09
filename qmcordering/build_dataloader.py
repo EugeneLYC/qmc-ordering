@@ -5,7 +5,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
-from .constants import *
+from .constants import _RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _CIFAR10_, _CIFAR100_, _MNIST_
 from .qmcda.datasets import CIFAR10, CIFAR100
 
 

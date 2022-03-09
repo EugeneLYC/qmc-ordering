@@ -1,5 +1,5 @@
 import torch
-from ..constants import *
+from ..constants import _MNIST_
 from sklearn import random_projection
 
 def _load_batch(args, input, target):

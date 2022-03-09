@@ -1,5 +1,5 @@
 import torch
-from .constants import *
+from .constants import _LOGISTIC_REGRESSION_, _MNIST_, _LENET_, _RESNET20_, _CIFAR10_
 
 def get_model(args):
     if args.model == _LOGISTIC_REGRESSION_:

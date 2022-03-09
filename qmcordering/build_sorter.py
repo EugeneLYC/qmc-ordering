@@ -1,4 +1,4 @@
-from .constants import *
+from .constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_
 from .sort.algo import StaleGradGreedySort, ZerothOrderGreedySort
 
 def get_sorter(args,
