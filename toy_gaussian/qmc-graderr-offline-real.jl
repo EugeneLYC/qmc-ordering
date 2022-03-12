@@ -43,57 +43,45 @@ function grad_errors(T::Int64, wtau::Vector{Float64},
 end
 
 
-# training
-result_fn = "off-graderr-a6a-$n-$d-$RUNS-$EPOCHS-$SEED-$qrng_names.jld"
-if isfile(result_fn)
-    println("loading results from $result_fn")
-    result = load(result_fn)
-    println("results loaded")
-else
-    println("begin computing gradient errors...")
-    result = Dict()
+println("begin computing gradient errors...")
+result = Dict()
 
-    w0 = zeros(d)
-    res = -y ./ (1 .+ exp.(y .* X * w0))
-    full_grad = reshape(sum(X .* res, dims = 1) ./ n, d) + λ * w0
+w0 = zeros(d)
+res = -y ./ (1 .+ exp.(y .* X * w0))
+full_grad = reshape(sum(X .* res, dims = 1) ./ n, d) + λ * w0
 
-    for qrng_name in qrng_names
-        err_list = zeros(RUNS, T)
+for qrng_name in qrng_names
+    err_list = zeros(RUNS, T)
 
-        for run = 1:RUNS
-            if qrng_name in collect(keys(qrngs))
-                distrib = qrngs[qrng_name]
-                # generate QMC indices 
-                sample_indices = [Int(ceil(i)) for i in QuasiMonteCarlo.sample(T, 0, n, distrib)]
-            else
-                if qrng_name == "SO"
-                    Random.seed!(SEED + run)
+    for run = 1:RUNS
+        if qrng_name in collect(keys(qrngs))
+            distrib = qrngs[qrng_name]
+            # generate QMC indices 
+            sample_indices = [Int(ceil(i)) for i in QuasiMonteCarlo.sample(T, 0, n, distrib)]
+        else
+            if qrng_name == "SO"
+                Random.seed!(SEED + run)
+                perm = randperm!(collect(1:n))
+                sample_indices = repeat(perm, EPOCHS)
+    
+            elseif qrng_name == "RR"
+                sample_indices = zeros(Int64, T)
+                for epoch = 1:EPOCHS
+                    Random.seed!(SEED + run + epoch)
                     perm = randperm!(collect(1:n))
-                    sample_indices = repeat(perm, EPOCHS)
-        
-                elseif qrng_name == "RR"
-                    sample_indices = zeros(Int64, T)
-                    for epoch = 1:EPOCHS
-                        Random.seed!(SEED + run + epoch)
-                        perm = randperm!(collect(1:n))
-                        sample_indices[(epoch-1)*n+1:epoch*n] = perm
-                    end
-                else
-                    ArgumentError("SGD variant does not exist.")
+                    sample_indices[(epoch-1)*n+1:epoch*n] = perm
                 end
+            else
+                ArgumentError("SGD variant does not exist.")
             end
-        
-            err_list[run, :] = grad_errors(T, w0, full_grad, sample_indices)
         end
-        result[qrng_name] = err_list
+    
+        err_list[run, :] = grad_errors(T, w0, full_grad, sample_indices)
     end
-
-    println("completed")
-
-    save(result_fn, result)
-    println("results file saved at $result_fn")
+    result[qrng_name] = err_list
 end
 
+println("completed")
 println("plotting...")
 
 figure(figsize = (6,6))
@@ -103,12 +91,6 @@ for (q, qrng_name) in enumerate(["IID Uniform", "Sobol", "RR", "SO"])
     err_list = result[qrng_name]
     err_mean = mean(err_list, dims=1)'
 
-    # use moving average to smooth out the curves as RR and SO are highly oscillatory
-    # towards the end
-    # using RollingFunctions
-    # ws = 2000
-    # err_mean = runmean(reshape(err_mean, T), ws)
-    
     loglog(collect(1000:1000:T), err_mean[1000:1000:T], label=qrng_name, color=colors[q])
     ylim(bottom=1e-8)
 end
@@ -122,7 +104,7 @@ xticks(fontsize=20)
 yticks(fontsize=20)
 
 tight_layout()
-plot_fn = "qmc-graderr-offline-a6a.pdf"
+plot_fn = joinpath(pwd(),"figs", "qmc-graderr-offline-a6a.pdf")
 savefig(plot_fn)
 println("plot saved at $plot_fn")
 
