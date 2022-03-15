@@ -27,7 +27,26 @@ The rationale for data augmentation is that by performing some reasonable random
 bash commands/resnet_cifar10.sh
 ```
 ### 2.2 Build Customized QMC-based Data Augmentation
-We provide APIs for customized data augmentation.
+We provide APIs for customized data augmentation. This code base supports all the randomized data augmentation techniques included by [torchvision.transforms](https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py).
+
+The users can then specify their own transforms (with order preserved). As an example, the CIFAR10 transforms can be given by,
+```
+{
+    "RandomHorizontalFlip": {
+        "p": 0.5
+    },
+    "RandomCrop": {
+        "size": 32,
+        "padding": 4
+    },
+    "ToTensor": {},
+    "Normalize": {
+        "mean": [0.485, 0.456, 0.406],
+        "std": [0.229, 0.224, 0.225]
+    }
+}
+```
+and pass to the training script via `--transforms_json`.
 
 
 ## 3. Citation
