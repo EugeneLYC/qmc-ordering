@@ -11,6 +11,8 @@ import torch.utils.data as data
 import torchvision.datasets as datasets
 from torchvision.transforms import functional as F
 
+from ..constants import _MAX_SOBOL_SEQ_LEN_
+
 def unit_interval_to_categorical(x, K):
     c = int(math.floor(K * float(x)))
     if c >= K:
@@ -26,6 +28,53 @@ def loads_data(buf):
         buf: the output of `dumps`.
     """
     return pickle.loads(buf)
+
+class QMCDataset:
+    def __init__(self,
+                dataset,
+                transforms,
+                qmc_quotas,
+                args) -> None:
+        self.dataset = dataset
+        assert self.dataset.transform is None
+        self.transforms = transforms
+        self.args = args
+        self.size = self.__len__()
+        self.batch_per_epoch = math.ceil(self.size / self.args.batch_size)
+        
+        self.qmc_dimension = sum(qmc_quotas)
+
+        self.seq_len = 2**(int(math.ceil(
+            math.log(self.size + self.args.epochs, 2)
+        )))
+        assert _MAX_SOBOL_SEQ_LEN_ > self.args.epochs
+        self.seq_len = min(_MAX_SOBOL_SEQ_LEN_, self.seq_len)
+        self.need_hash = self.size + self.args.epochs > self.seq_len
+        if self.need_hash:
+            self.hash_base = self.seq_len - self.args.epochs
+        self.sobolseq = torch.quasirandom.SobolEngine(
+            dimension=self.qmc_dimension, scramble=args.scramble).draw(self.seq_len)
+
+        self.cur_batch = 0
+        self.epoch = args.start_epoch
+    
+    def update_sobol(self):
+        self.cur_batch += 1
+        if self.cur_batch == self.batch_per_epoch:
+            self.cur_batch = 0
+            self.epoch += 1
+    
+    def __getitem__(self, index: int):
+        qmc_index = index % self.hash_base if self.need_hash else index
+        x = self.sobolseq[qmc_index + self.epoch].tolist()
+
+        (img, target) = self.dataset.__getitem__(index)
+        if self.transforms is not None:
+            img = self.transforms(img, x)
+        return (img, target)
+    
+    def __len__(self) -> int:
+        return len(self.dataset.data)
 
 class CIFAR10:
     def __init__(self, cifar10: datasets.CIFAR10, transform, args) -> None:

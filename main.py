@@ -63,8 +63,8 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch
-        if args.use_qmc_da:
-            loaders['trainset'].update(epoch)
+        # if args.use_qmc_da:
+        #     loaders['trainset'].update(epoch)
         train(args,
             loaders['train'],
             model,

@@ -10,4 +10,4 @@
 #SBATCH -o qmc_%j.out                  # Name of stdout output log file (%j expands to jobID)
 #SBATCH -e qmc_%j.err                  # Name of stderr output log file (%j expands to jobID)
 
-bash commands/lg_mnist.sh
+bash commands/resnet_cifar10.sh

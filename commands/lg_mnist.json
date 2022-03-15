@@ -1,7 +1,0 @@
-{
-    "RandomHorizontalFlip": true,
-    "RandomRotation": {
-        "left_degree": -10,
-        "right_degree": 10
-    }
-}

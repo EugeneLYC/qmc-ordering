@@ -149,7 +149,16 @@ def get_args():
     parser.add_argument('--use_qmc_da',
                         default=False,
                         action='store_true',
-                        help='whether to use qmc based data augmentation (now for cifar)')
+                        help='whether to use qmc based data augmentation')
+    
+    parser.add_argument('--scramble',
+                        default=True,
+                        action='store_true',
+                        help='whether to use scramble in the sobol sequence (default: True)')
+    
+    parser.add_argument('--transforms_json',
+                        type=str,
+                        help='the file for customized data augmentation')
     
     args = parser.parse_args()
     return args

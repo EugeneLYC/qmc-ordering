@@ -9,6 +9,9 @@ import torchvision.datasets as datasets
 from .constants import _RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _CIFAR10_, _CIFAR100_, _MNIST_
 from .qmcda.datasets import CIFAR10, CIFAR100
 
+from .qmcda.utils import get_transforms
+from .qmcda.datasets import QMCDataset
+
 
 # The baseline data augmentation is taken from the following open source repos:
 # cifar10: https://github.com/akamaster/pytorch_resnet_cifar10
@@ -21,12 +24,15 @@ def _get_cifar10_loaders(args, data_path, shuffle_flag):
                                         std=[0.229, 0.224, 0.225])
     # use a sobol sequence that does sample index aware augmentation
     if args.use_qmc_da:
-        cifar10 = CIFAR10(cifar10=datasets.CIFAR10(root=data_path, train=True, download=True),
-            transform=transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]), args=args)
-        loaders['trainset'] = cifar10
+        # cifar10 = CIFAR10(cifar10=datasets.CIFAR10(root=data_path, train=True, download=True),
+        #     transform=transforms.Compose([
+        #         transforms.ToTensor(),
+        #         normalize,
+        #     ]), args=args)
+        qmc_transforms, qmc_quotas = get_transforms(args)
+        cifar10 = QMCDataset(dataset=datasets.CIFAR10(root=data_path, train=True, download=True),
+            transforms=qmc_transforms, qmc_quotas=qmc_quotas, args=args)
+        # loaders['trainset'] = cifar10
         loaders['train'] = torch.utils.data.DataLoader(
             cifar10,
             batch_size=args.batch_size, shuffle=shuffle_flag,
