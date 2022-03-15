@@ -101,9 +101,9 @@ def get_args():
     # greedy method related arguments
     parser.add_argument('--shuffle_type',
                         default='RR',
-                        choices=['RR', 'SO', 'greedy', 'ZO'],
+                        choices=['RR', 'SO', 'greedy', 'ZO', 'fresh'],
                         type=str,
-                        help='shuffle type used for the optimization (choose from RR, SO, greedy)')
+                        help='shuffle type used for the optimization (choose from RR, SO, greedy, ZO, fresh)')
     
     parser.add_argument('--task_name',
                         default='test',
@@ -135,6 +135,11 @@ def get_args():
                         type=float,
                         help='decide project how much ratio of the orginal entire model (default: 0.1)')
 
+    parser.add_argument('--proj_target',
+                        default=1024,
+                        type=int,
+                        help='the target dimension for random projection')
+        
     # data augmentation related arguments
     parser.add_argument('--use_uniform_da',
                         default=False,

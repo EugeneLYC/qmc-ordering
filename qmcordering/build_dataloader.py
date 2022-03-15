@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import torch
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
-from .constants import _RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _CIFAR10_, _CIFAR100_, _MNIST_
+from .constants import _RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _CIFAR10_, _CIFAR100_, _MNIST_
 from .qmcda.datasets import CIFAR10, CIFAR100
 
 
@@ -124,7 +125,7 @@ def _get_imagenet_loaders(args):
     pass
 
 def get_loaders(args):
-    shuffle_flag = True if args.shuffle_type in [_RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_] else False
+    shuffle_flag = True if args.shuffle_type in [_RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_] else False
     data_path = os.path.join(args.data_path, "data")
     if args.dataset == _CIFAR10_:
         loaders = _get_cifar10_loaders(args, data_path, shuffle_flag)

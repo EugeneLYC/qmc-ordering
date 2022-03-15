@@ -23,6 +23,7 @@ _RANDOM_RESHUFFLING_ = 'RR'
 _SHUFFLE_ONCE_ = 'SO'
 _ZEROTH_ORDER_SORT_ = 'ZO'
 _STALE_GRAD_SORT_ = 'greedy'
+_FRESH_GRAD_SORT_ = 'fresh'
 
 
 ##############################

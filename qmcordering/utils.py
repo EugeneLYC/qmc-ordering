@@ -3,7 +3,7 @@ import time
 import numpy as np
 from contextlib import contextmanager
 from io import StringIO
-from .constants import *
+from .constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_
 from .sort.utils import _load_batch, compute_avg_grad_error
 
 class AverageMeter(object):
@@ -47,13 +47,21 @@ def train(args,
             logger,
             timer=None,
             sorter=None):
+    
+    losses = AverageMeter()
+    top1 = AverageMeter()
+
+    model.train()
+    
     train_batches = list(enumerate(train_loader))
     if sorter is not None:
         with timer("sorting", epoch=epoch):
             if args.shuffle_type == _STALE_GRAD_SORT_:
                 orders = sorter.sort(epoch)
             elif args.shuffle_type == _ZEROTH_ORDER_SORT_:
-                orders = sorter.sort(epoch, model, criterion, train_loader)
+                orders = sorter.sort(epoch, model, criterion, train_batches)
+            elif args.shuffle_type == _FRESH_GRAD_SORT_:
+                orders = sorter.sort(epoch, model, criterion, train_batches, optimizer)
     else:
         orders = {i:0 for i in range(len(train_batches))}
 
@@ -66,13 +74,6 @@ def train(args,
                             epoch,
                             logger,
                             orders=orders)
-    
-    losses = AverageMeter()
-    top1 = AverageMeter()
-
-    # switch to train mode
-
-    model.train()
 
     for i in orders.keys():
         _, (input, target) = train_batches[i]

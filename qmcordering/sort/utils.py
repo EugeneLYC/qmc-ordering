@@ -25,8 +25,8 @@ def compute_avg_grad_error(args,
                         orders=None):
     grads = dict()
     for i in range(len(train_batches)):
-        grads[i] = [p.data.clone().zero_() for p in model.parameters()]
-    full_grad = [p.data.clone().zero_() for p in model.parameters()]
+        grads[i] = flatten_params(model).zero_()
+    full_grad = flatten_params(model).zero_()
     if orders is None:
         orders = {i:0 for i in range(len(train_batches))}
     for j in orders.keys():
@@ -36,10 +36,9 @@ def compute_avg_grad_error(args,
         loss = criterion(output, target_var)
         optimizer.zero_grad()
         loss.backward()
-        for m, p in enumerate(model.parameters()):
-            grads[i][m] = p.grad.data.clone()
-            full_grad[m].add_(p.grad.data.clone())
-    cur_grad = [p.data.clone().zero_() for p in model.parameters()]
+        grads[i] = flatten_grad(optimizer)
+        full_grad.add_(grads[i])
+    cur_grad = flatten_params(model).zero_()
     cur_var = 0
     index=0
     for j in orders.keys():
@@ -61,4 +60,16 @@ def flatten_grad(optimizer):
                     t = torch.cat(
                         (t, torch.flatten(p.grad.data))
                     )
+    return t
+
+def flatten_params(model):
+    t = None
+    for _, param in enumerate(model.parameters()):
+        if param.data is not None:
+            if t is None:
+                t = torch.flatten(param.data)
+            else:
+                t = torch.cat(
+                    (t, torch.flatten(param.data))
+                )
     return t
