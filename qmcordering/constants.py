@@ -4,6 +4,7 @@
 _MNIST_ = 'mnist'
 _CIFAR10_ = 'cifar10'
 _CIFAR100_ = 'cifar100'
+_IMAGENET_ = 'imagenet'
 
 
 ##############################

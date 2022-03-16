@@ -21,6 +21,10 @@ bash commands/lg_mnist.sh
 ### 1.2 Toy Example on synthetic Gaussian
 We provide the source code (in [Julia](https://julialang.org/)) for reproducing the toy example of Gaussion ([Figure 1](https://openreview.net/pdf?id=7gWSJrP3opB)) in the [toy_gaussian repo](https://github.com/EugeneLYC/qmc-ordering/tree/main/toy_gaussian).
 
+### 1.3 Empirical Results
+![sort-image](docs/assets/images/sort.jpeg)
+For detailed experimental settings, please refer to the [paper](https://openreview.net/pdf?id=7gWSJrP3opB).
+
 
 ## 2. QMC-based Data Augmentation
 ### 2.1 Examples from the paper
@@ -31,8 +35,7 @@ bash commands/resnet_cifar10.sh
 
 ### 2.2 Build Customized QMC-based Data Augmentation
 We provide APIs for customized data augmentation. This code base supports all the randomized data augmentation techniques included by [torchvision.transforms](https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py).
-
-The users can then specify their own transforms (with order preserved). As an example, the CIFAR10 transforms can be given by,
+Users can then specify their own transforms (with order preserved). As an example, the CIFAR10 transforms can be given by,
 ```json
 {
     "RandomHorizontalFlip": {
@@ -58,17 +61,17 @@ from qmcordering.qmcda.datasets import QMCDataset
 # The args should contain --transforms_json
 qmc_transforms, qmc_quotas = get_transforms(args)
 
-cifar10 = QMCDataset(dataset=datasets.CIFAR10(root=data_path, train=True, download=True),
+cifar10 = QMCDataset(dataset=datasets.CIFAR10(...),
                     transforms=qmc_transforms,
                     qmc_quotas=qmc_quotas,
-                    args=args)
+                    ...)
 
-train_loader = torch.utils.data.DataLoader(cifar10,
-                                        batch_size=16,
+dataloader = torch.utils.data.DataLoader(cifar10,
                                         ...)
 ```
-
-
+### 2.3 Empirical Results
+![sort-image](docs/assets/images/qmc.jpeg)
+For detailed experimental settings, please refer to the [paper](https://openreview.net/pdf?id=7gWSJrP3opB).
 
 
 ## 3. Citation

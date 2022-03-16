@@ -872,7 +872,6 @@ class RandomPerspective(torch.nn.Module):
 
 
 
-
 class RandomResizedCrop(torch.nn.Module):
     """Crop a random portion of image and resize it to a given size.
 
@@ -945,15 +944,15 @@ class RandomResizedCrop(torch.nn.Module):
 
         log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
-            target_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            aspect_ratio = torch.exp(torch.empty(1).uniform_(log_ratio[0], log_ratio[1])).item()
+            target_area = area * (scale[0] + x[0] * (scale[1] - scale[0]))
+            aspect_ratio = torch.exp(log_ratio[0] + x[1] * (log_ratio[1] - log_ratio[0]))
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
             if 0 < w <= width and 0 < h <= height:
-                i = unit_interval_to_categorical(x[0], height - h + 1)
-                j = unit_interval_to_categorical(x[1], width - w + 1)
+                i = unit_interval_to_categorical(x[2], height - h + 1)
+                j = unit_interval_to_categorical(x[3], width - w + 1)
                 return i, j, h, w
 
         # Fallback to central crop
@@ -1226,6 +1225,7 @@ class ColorJitter(torch.nn.Module):
         contrast: Optional[List[float]],
         saturation: Optional[List[float]],
         hue: Optional[List[float]],
+        x
     ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
         """Get the parameters for the randomized transform to be applied on image.
 
@@ -1245,14 +1245,14 @@ class ColorJitter(torch.nn.Module):
         """
         fn_idx = torch.randperm(4)
 
-        b = None if brightness is None else float(torch.empty(1).uniform_(brightness[0], brightness[1]))
-        c = None if contrast is None else float(torch.empty(1).uniform_(contrast[0], contrast[1]))
-        s = None if saturation is None else float(torch.empty(1).uniform_(saturation[0], saturation[1]))
-        h = None if hue is None else float(torch.empty(1).uniform_(hue[0], hue[1]))
+        b = None if brightness is None else float(brightness[0] + x[0] * (brightness[1] - brightness[0]))
+        c = None if contrast is None else float(contrast[0] + x[1] * (contrast[1] - contrast[0]))
+        s = None if saturation is None else float(saturation[0] + x[2] * (saturation[1] - saturation[0]))
+        h = None if hue is None else float(hue[0] + x[3] * (hue[1] - hue[0]))
 
         return fn_idx, b, c, s, h
 
-    def forward(self, img):
+    def forward(self, img, x):
         """
         Args:
             img (PIL Image or Tensor): Input image.
@@ -1261,7 +1261,7 @@ class ColorJitter(torch.nn.Module):
             PIL Image or Tensor: Color jittered image.
         """
         fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor = self.get_params(
-            self.brightness, self.contrast, self.saturation, self.hue
+            self.brightness, self.contrast, self.saturation, self.hue, x
         )
 
         for fn_id in fn_idx:
