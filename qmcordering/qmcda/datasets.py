@@ -74,7 +74,7 @@ class QMCDataset:
         return (img, target)
 
     def __len__(self) -> int:
-        return len(self.dataset.data)
+        return self.dataset.__len__()
 
 class ImageFolderLMDB(data.Dataset):
     def __init__(self, db_path, transform=None, target_transform=None):
@@ -109,13 +109,14 @@ class ImageFolderLMDB(data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        im2arr = np.array(img)
+        # im2arr = np.array(img)
+        # im2arr = torch.from_numpy(im2arr)
 
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        # return img, target
-        return im2arr, target
+        return img, target
+        # return im2arr, target
 
     def __len__(self):
         return self.length

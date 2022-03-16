@@ -20,7 +20,7 @@ def get_model(args):
     elif args.model == _RESNET18_:
         if args.dataset == _IMAGENET_:
             import torchvision
-            model = torch.nn.DataParallel(model = torchvision.models.__dict__[args.arch](pretrained=args.pretrained))
+            model = torch.nn.DataParallel(torchvision.models.__dict__[args.model](pretrained=args.pretrained))
         else:
             raise NotImplementedError("Currently only ImageNet is supported for this model")
     else:

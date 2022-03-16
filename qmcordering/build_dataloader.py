@@ -102,7 +102,7 @@ def _get_cifar100_loaders(args, data_path, shuffle_flag):
         batch_size=args.test_batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=False)
     return loaders
-    
+
 def _get_mnist_loaders(args, data_path, shuffle_flag):
     loaders = {}
     transform=transforms.Compose([
@@ -123,8 +123,8 @@ def _get_imagenet_loaders(args, shuffle_flag):
     loaders = {}
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                         std=[0.229, 0.224, 0.225])
-    traindir = os.path.join(args.data_path, 'train')
-    valdir = os.path.join(args.data_path, 'val')
+    traindir = os.path.join(args.data_path, 'train.lmdb')
+    valdir = os.path.join(args.data_path, 'val.lmdb')
     # use a sobol sequence that does sample index aware augmentation
     if args.use_qmc_da:
         qmc_transforms, qmc_quotas = get_transforms(args)
@@ -175,7 +175,7 @@ def get_loaders(args):
     if args.dataset == _CIFAR10_:
         loaders = _get_cifar10_loaders(args, data_path, shuffle_flag)
     elif args.dataset == _CIFAR100_:
-        loaders = _get_cifar100_loaders(args, data_path, shuffle_flag)    
+        loaders = _get_cifar100_loaders(args, data_path, shuffle_flag)
     elif args.dataset == _MNIST_:
         loaders = _get_mnist_loaders(args, data_path, shuffle_flag)
     elif args.dataset == _IMAGENET_:
