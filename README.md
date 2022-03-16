@@ -17,20 +17,23 @@ Detailed pseudo-code can be found in Algorithm 1 in our [paper](https://openrevi
 ```
 bash commands/lg_mnist.sh
 ```
-### 1.2 Build Customized Sorting Algorithm
-Aside from the algorithm provided in the paper, users can construct arbitrary sorting algorithm via the sort APIs.
+
+### 1.2 Toy Example on synthetic Gaussian
+We provide the source code (in [Julia](https://julialang.org/)) for reproducing the toy example of Gaussion ([Figure 1](https://openreview.net/pdf?id=7gWSJrP3opB)) in the [toy_gaussian repo](https://github.com/EugeneLYC/qmc-ordering/tree/main/toy_gaussian).
+
 
 ## 2. QMC-based Data Augmentation
 ### 2.1 Examples from the paper
-The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). We provide an example script in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) with Resnet20 on CIFAR10. One can run it with
-```
+The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Traditional methods augment data in a uniform fashion. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). We provide an example script in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) with Resnet20 on CIFAR10. One can run it with
+```bash
 bash commands/resnet_cifar10.sh
 ```
+
 ### 2.2 Build Customized QMC-based Data Augmentation
 We provide APIs for customized data augmentation. This code base supports all the randomized data augmentation techniques included by [torchvision.transforms](https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py).
 
 The users can then specify their own transforms (with order preserved). As an example, the CIFAR10 transforms can be given by,
-```
+```json
 {
     "RandomHorizontalFlip": {
         "p": 0.5
@@ -46,7 +49,26 @@ The users can then specify their own transforms (with order preserved). As an ex
     }
 }
 ```
-and pass to the training script via `--transforms_json`.
+and pass to the training script via `--transforms_json`. Then the QMC-sampling-enabled dataset can be created via `QMCDataset`. Concretely, take CIFAR10,
+```python
+import torch
+from qmcordering.qmcda.utils import get_transforms
+from qmcordering.qmcda.datasets import QMCDataset
+
+# The args should contain --transforms_json
+qmc_transforms, qmc_quotas = get_transforms(args)
+
+cifar10 = QMCDataset(dataset=datasets.CIFAR10(root=data_path, train=True, download=True),
+                    transforms=qmc_transforms,
+                    qmc_quotas=qmc_quotas,
+                    args=args)
+
+train_loader = torch.utils.data.DataLoader(cifar10,
+                                        batch_size=16,
+                                        ...)
+```
+
+
 
 
 ## 3. Citation
