@@ -41,7 +41,7 @@ class QMCDataset:
         self.args = args
         self.size = self.__len__()
         self.batch_per_epoch = math.ceil(self.size / self.args.batch_size)
-        
+
         self.qmc_dimension = sum(qmc_quotas)
 
         self.seq_len = 2**(int(math.ceil(
@@ -57,13 +57,13 @@ class QMCDataset:
 
         self.cur_batch = 0
         self.epoch = args.start_epoch
-    
+
     def update_sobol(self):
         self.cur_batch += 1
         if self.cur_batch == self.batch_per_epoch:
             self.cur_batch = 0
             self.epoch += 1
-    
+
     def __getitem__(self, index: int):
         qmc_index = index % self.hash_base if self.need_hash else index
         x = self.sobolseq[qmc_index + self.epoch].tolist()
@@ -71,8 +71,9 @@ class QMCDataset:
         (img, target) = self.dataset.__getitem__(index)
         if self.transforms is not None:
             img = self.transforms(img, x)
+        self.update_sobol()
         return (img, target)
-    
+
     def __len__(self) -> int:
         return len(self.dataset.data)
 
@@ -83,7 +84,7 @@ class CIFAR10:
         self.state = 0
         self.args = args
         self.sobolengs = torch.quasirandom.SobolEngine(dimension=3, scramble=True).draw(65536)
-    
+
     def update(self, epoch):
         self.epoch = epoch
 
@@ -113,7 +114,7 @@ class CIFAR100:
         self.state = 0
         self.args = args
         self.sobolengs = torch.quasirandom.SobolEngine(dimension=4, scramble=True).draw(65536)
-    
+
     def update(self, epoch):
         self.epoch = epoch
 
@@ -151,7 +152,7 @@ class ImageFolderLMDB(data.Dataset):
 
         self.transform = transform
         self.target_transform = target_transform
-    
+
     def __getitem__(self, index):
         env = self.env
         with env.begin(write=False) as txn:
@@ -193,10 +194,10 @@ class ImageNet:
         self.state = 0
         self.args = args
         self.sobolengs = torch.quasirandom.SobolEngine(dimension=5, scramble=True).draw(65536)
-    
+
     def update(self, epoch):
         self.epoch = epoch
-    
+
     def __getitem__(self, index: int):
         x = self.sobolengs[index + self.epoch]
         s = unit_interval_to_categorical(x[2], 2)
