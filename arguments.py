@@ -7,6 +7,11 @@ def get_args():
                         metavar='ARCH',
                         default='resnet20',
                         help='model to use (lenet, resnetxx)')
+    
+    parser.add_argument('--pretrained',
+                        default=True,
+                        action='store_true',
+                        help='whether to use pretrained model (currently only for ImageNet)')
 
     parser.add_argument('--dataset',
                         default='cifar10',

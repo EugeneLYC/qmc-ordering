@@ -1,5 +1,6 @@
 import torch
-from .constants import _LOGISTIC_REGRESSION_, _MNIST_, _LENET_, _RESNET20_, _CIFAR10_
+from .constants import _LOGISTIC_REGRESSION_, _MNIST_, _LENET_, _RESNET20_, _CIFAR10_, \
+    _RESNET18_, _IMAGENET_
 
 def get_model(args):
     if args.model == _LOGISTIC_REGRESSION_:
@@ -16,6 +17,12 @@ def get_model(args):
             model = torch.nn.DataParallel(resnet.__dict__[args.model]())
         else:
             raise NotImplementedError("Currently only CIFAR10 is supported for this model")
+    elif args.model == _RESNET18_:
+        if args.dataset == _IMAGENET_:
+            import torchvision
+            model = torch.nn.DataParallel(model = torchvision.models.__dict__[args.arch](pretrained=args.pretrained))
+        else:
+            raise NotImplementedError("Currently only ImageNet is supported for this model")
     else:
         raise NotImplementedError("This model is currently not supported, please add its implementation in qmcordering/models")
     if torch.cuda.is_available():

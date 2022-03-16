@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import torch
-from .constants import _CIFAR10_, _CIFAR100_, _LOGISTIC_REGRESSION_, _LENET_, _RESNET_
+from .constants import _CIFAR10_, _CIFAR100_, _LOGISTIC_REGRESSION_, _LENET_, _RESNET_, _IMAGENET_
 
 def get_lr_scheduler(args, optimizer):
     if _RESNET_ in args.model:
@@ -10,6 +10,9 @@ def get_lr_scheduler(args, optimizer):
         elif args.dataset == _CIFAR100_:
             return torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                         milestones=[60, 120, 150], gamma=0.2, last_epoch=args.start_epoch-1)
+        elif args.dataset == _IMAGENET_:
+            return torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                        milestones=[30, 60], last_epoch=args.start_epoch-1)
         else:
             raise NotImplementedError
     elif args.model == _LOGISTIC_REGRESSION_ or args.model == _LENET_:
