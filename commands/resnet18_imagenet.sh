@@ -9,7 +9,7 @@ base_dir=`pwd`
 
 run_cmd="python3 main.py --model=${model} \
         --dataset=${dataset} \
-        --data_path=${base_dir} \
+        --data_path=/data/imagenet/ \
         --epochs=${epochs} \
         --batch_size=${bsz} \
         --lr=${lr} \
@@ -18,7 +18,7 @@ run_cmd="python3 main.py --model=${model} \
         --weight_decay=1e-4 \
         --use_tensorboard \
         --tensorboard_path=${base_dir} \
-        --workers=32 \
+        --workers=16 \
         --use_qmc_da \
         --transforms_json=${base_dir}/jsons/imagenet.json
         "

@@ -30,4 +30,4 @@ _FRESH_GRAD_SORT_ = 'fresh'
 ##############################
 # parameters
 ##############################
-_MAX_SOBOL_SEQ_LEN_ = 262144
+_MAX_SOBOL_SEQ_LEN_ = 2097152
