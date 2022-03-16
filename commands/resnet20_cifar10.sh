@@ -20,7 +20,7 @@ run_cmd="python3 main.py --model=${model} \
         --tensorboard_path=${base_dir} \
         --workers=4 \
         --use_qmc_da \
-        --transforms_json=${base_dir}/jsons/resnet_cifar10.json
+        --transforms_json=${base_dir}/jsons/cifar10.json
         "
 
 echo ${run_cmd}

@@ -11,8 +11,11 @@ def get_lr_scheduler(args, optimizer):
             return torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                         milestones=[60, 120, 150], gamma=0.2, last_epoch=args.start_epoch-1)
         elif args.dataset == _IMAGENET_:
-            return torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                        milestones=[30, 60], last_epoch=args.start_epoch-1)
+            if args.pretrained:
+                return torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=1, last_epoch=args.start_epoch-1)
+            else:
+                return torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                            milestones=[30, 60], last_epoch=args.start_epoch-1)
         else:
             raise NotImplementedError
     elif args.model == _LOGISTIC_REGRESSION_ or args.model == _LENET_:
