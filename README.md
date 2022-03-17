@@ -8,7 +8,10 @@ In the [Tenth International Conference on Learning Representations (ICLR) 2022](
 This repository contains the source code for the empirical results in our [ICLR'22 paper](https://openreview.net/pdf?id=7gWSJrP3opB) on QMC-based data ordering analysis. It provides implementation on two Quasi-Monte-Carlo (QMC) related methods:
 * Greedy sorting to construct better example ordering at the beginning of each epoch.
 * QMC-based data augmentation.
-  
+
+**Abstract:**
+Training example order in SGD has long been known to affect convergence rate. Recent results show that accelerated rates are possible in a variety of cases for permutation-based sample orders, in which each example from the training set is used once before any example is reused. In this paper, we develop a broad condition on the sequence of examples used by SGD that is sufficient to prove tight convergence rates in both strongly convex and non-convex settings. We show that our approach suffices to recover, and in some cases improve upon, previous state-of-the-art analyses for four known example-selection schemes: (1) shuffle once, (2) random reshuffling, (3) random reshuffling with data echoing, and (4) Markov Chain Gradient Descent. Motivated by our theory, we propose two new example-selection approaches. First, using quasi-Monte-Carlo methods, we achieve unprecedented accelerated convergence rates for learning with data augmentation. Second, we greedily choose a fixed scan-order to minimize the metric used in our condition and show that we can obtain more accurate solutions from the same number of epochs of SGD. We conclude by empirically demonstrating the utility of our approach for both convex linear-model and deep learning tasks.
+
 ## 1. Example Ordering with Greedy Sorting
 ### 1.1 Example-Ordered SGD via Greedily Minimizing Average Gradient Error
 One of the key insights from our [paper](https://openreview.net/pdf?id=7gWSJrP3opB) is that: if the examples are ordered in a way such that the averages of consecutive example gradients converge faster to the full gradient, then running SGD with such ordering will enjoy a faster convergence rate.
@@ -27,7 +30,7 @@ We provide the source code (in [Julia](https://julialang.org/)) for reproducing 
 ### 2.1 Examples from the paper
 The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Traditional methods augment data in a uniform fashion. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). An example script is provided in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) to train Resnet20 on CIFAR10 with QMC-based data augmentation. We can run it with
 ```bash
-bash commands/resnet_cifar10.sh
+bash commands/resnet20_cifar10.sh
 ```
 
 ### 2.2 Build Customized QMC-based Data Augmentation
