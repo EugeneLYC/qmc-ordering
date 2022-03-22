@@ -186,7 +186,7 @@ class FreshGradGreedySort(Sort):
         orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
         return orders
 
-class ZerothOrderGreedySort(Sort):
+class NaiveZerothOrderGreedySort(Sort):
     def __init__(self,
                 args,
                 num_batches,
@@ -198,7 +198,7 @@ class ZerothOrderGreedySort(Sort):
         self.grad_dimen = grad_dimen
         self.timer = timer
         self.model = model
-        assert self.timer is not None
+        # assert self.timer is not None
 
         self.zo_query_points = [dict() for _ in range(self.args.zo_batch_size)]
         self._init_zo_query_points()
@@ -224,7 +224,7 @@ class ZerothOrderGreedySort(Sort):
     def _skip_sort_this_epoch(self, epoch):
         return epoch <= self.args.start_greedy
 
-    def sort(self, epoch, model, criterion, train_batches, orders=None):
+    def sort(self, epoch, model, train_batches, criterion=None, orders=None):
         if orders is None:
             orders = {i:0 for i in range(self.num_batches)}
         if self._skip_sort_this_epoch(epoch):
@@ -238,10 +238,14 @@ class ZerothOrderGreedySort(Sort):
             Loss_F_i = [0 for _ in range(len(train_batches))]
             for i in orders.keys():
                 # compute all the f_i(x) and store them in the X
-                _, (input, target) = train_batches[i]
-                input_var, target_var = _load_batch(self.args, input, target)
-                output = model(input_var)
-                loss = criterion(output, target_var)
+                if self.args.task.type == 'cv':
+                    _, (input, target) = train_batches[i]
+                    input_var, target_var = _load_batch(self.args, input, target)
+                    output = model(input_var)
+                    loss = criterion(output, target_var)
+                else:
+                    _, batch = train_batches[i]
+                    loss = model(**batch).loss
                 Loss_F_i[i] = loss.item()
 
             for zo_bsz in range(self.args.zo_batch_size):
@@ -250,13 +254,121 @@ class ZerothOrderGreedySort(Sort):
                     param.data.add_(self.zo_query_points[zo_bsz][name] * mu)
                 for i in orders.keys():
                     # compute f_i(x+u) - f_i(x) and store them in X_perturbed
+                    if self.args.task_type == 'cv':
+                        _, (input, target) = train_batches[i]
+                        input_var, target_var = _load_batch(self.args, input, target)
+                        output = model(input_var)
+                        loss = criterion(output, target_var)
+                    else:
+                        _, batch = train_batches[i]
+                        loss = model(**batch).loss
+                    X[i][zo_bsz] = self.grad_dimen * (loss.item() / mu - Loss_F_i[i] / mu)
+                for name, param in model.named_parameters():
+                    param.data.add_(-1* self.zo_query_points[zo_bsz][name] * mu)
+            avg_query = sum(X) / len(X)
+            cur_sum = torch.zeros_like(avg_query)
+            remain_ids = set(range(self.num_batches))
+            for i in range(self.num_batches):
+                cur_id = -1
+                max_norm = float('inf')
+                for cand_id in remain_ids:
+                    cand_norm = torch.norm(
+                        (X[cand_id] + cur_sum*i) /(i+1) - avg_query
+                    ).item()
+                    if cand_norm < max_norm:
+                        max_norm = cand_norm
+                        cur_id = cand_id
+                remain_ids.remove(cur_id)
+                orders[cur_id] = i
+                cur_sum.mul_(i).add_(X[cur_id]).mul_(1/(i+1))
+        orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
+        return orders
+
+class ZerothOrderGreedySort(Sort):
+    def __init__(self,
+                args,
+                num_batches,
+                grad_dimen,
+                model,
+                timer=None):
+        self.args = args
+        self.num_batches = num_batches
+        self.grad_dimen = grad_dimen
+        self.timer = timer
+        self.model = model
+        # assert self.timer is not None
+
+        self.zo_query_points = [dict() for _ in range(self.args.zo_batch_size)]
+        self._init_zo_query_points()
+        torch.set_printoptions(precision=10)
+    
+    def _init_zo_query_points(self):
+        # Z = torch.normal(0, 1, size=(self.grad_dimen, self.grad_dimen), 
+        #                     requires_grad=False)
+        Z = torch.normal(0, 1, size=(self.grad_dimen, self.args.zo_batch_size), 
+                            requires_grad=False)
+        Q, _ = torch.linalg.qr(Z)
+        cur_index = 0
+        for name, param in self.model.named_parameters():
+            if len(name.split('.')) >= 4 and name.split('.')[3] <= '5' and name.split('.')[3] >= '0':
+                param_size = param.numel()
+                for i in range(self.args.zo_batch_size):
+                    self.zo_query_points[i][name] = Q[:, i][
+                        cur_index:cur_index+param_size
+                    ].clone().reshape(param.shape).to(param.device)
+                cur_index += param_size
+
+    def report_progress(self):
+        print(self.timer.summary())
+    
+    def _skip_sort_this_epoch(self, epoch):
+        return False
+
+    def sort(self, epoch, model, train_batches, criterion=None, orders=None):
+        if orders is None:
+            orders = {i:0 for i in range(self.num_batches)}
+        if self._skip_sort_this_epoch(epoch):
+            return orders
+        with torch.no_grad():
+            mu = 1e-3
+            X = [
+                torch.zeros(self.args.zo_batch_size)
+                for _ in range(len(train_batches))
+            ]
+            Loss_F_i = [0 for _ in range(len(train_batches))]
+            for i in orders.keys():
+                # compute all the f_i(x) and store them in the X
+                if self.args.task_type == 'cv':
                     _, (input, target) = train_batches[i]
                     input_var, target_var = _load_batch(self.args, input, target)
                     output = model(input_var)
                     loss = criterion(output, target_var)
+                else:
+                    _, batch = train_batches[i]
+                    loss = model(**batch).loss
+                Loss_F_i[i] = loss.item()
+
+            for zo_bsz in range(self.args.zo_batch_size):
+                # model_copy = copy.deepcopy(model)
+                for name, param in model.named_parameters():
+                    if len(name.split('.')) >= 4 and name.split('.')[3] <= '5' and name.split('.')[3] >= '0':
+                        # u  = torch.normal(0, 1, param.data.shape, requires_grad=False, device=param.device)
+                        # param.data.add_(u * mu)
+                        param.data.add_(self.zo_query_points[zo_bsz][name] * mu)
+                for i in orders.keys():
+                    # compute f_i(x+u) - f_i(x) and store them in X_perturbed
+                    if self.args.task_type == 'cv':
+                        _, (input, target) = train_batches[i]
+                        input_var, target_var = _load_batch(self.args, input, target)
+                        output = model(input_var)
+                        loss = criterion(output, target_var)
+                    else:
+                        _, batch = train_batches[i]
+                        loss = model(**batch).loss
                     X[i][zo_bsz] = self.grad_dimen * (loss.item() / mu - Loss_F_i[i] / mu)
                 for name, param in model.named_parameters():
-                    param.data.add_(-1* self.zo_query_points[zo_bsz][name] * mu)
+                    if len(name.split('.')) >= 4 and name.split('.')[3] <= '5' and name.split('.')[3] >= '0':
+                        param.data.add_(-1* self.zo_query_points[zo_bsz][name] * mu)
             avg_query = sum(X) / len(X)
             cur_sum = torch.zeros_like(avg_query)
             remain_ids = set(range(self.num_batches))
