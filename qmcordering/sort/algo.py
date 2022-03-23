@@ -97,8 +97,8 @@ class StaleGradGreedySort(Sort):
         self.avg_grad.zero_()
         orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
         return orders
-        
-class FreshGradGreedySort(Sort):
+
+class NaiveFreshGradGreedySort(Sort):
     def __init__(self,
                 args,
                 num_batches,
@@ -168,6 +168,101 @@ class FreshGradGreedySort(Sort):
                                     epoch)
 
         X = self.stale_grad_matrix.clone()
+        cur_sum = torch.zeros_like(self.avg_grad)
+        remain_ids = set(range(self.num_batches))
+        for i in range(1, self.num_batches+1):
+            cur_id = -1
+            max_norm = float('inf')
+            for cand_id in remain_ids:
+                cand_norm = torch.norm(
+                    (X[cand_id] + cur_sum)/i - self.avg_grad
+                ).item()
+                if cand_norm < max_norm:
+                    max_norm = cand_norm
+                    cur_id = cand_id
+            remain_ids.remove(cur_id)
+            orders[cur_id] = i
+            cur_sum.add_(X[cur_id])
+        orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
+        return orders
+
+
+class FreshGradGreedySort(Sort):
+    def __init__(self,
+                args,
+                num_batches,
+                grad_dimen,
+                timer=None):
+        self.args = args
+        self.num_batches = num_batches
+        self.grad_dimen = grad_dimen
+        self.timer = timer
+        # assert self.timer is not None
+        if self.args.use_random_proj:
+            self.stale_grad_matrix = torch.zeros(num_batches, self.args.zo_batch_size)
+            self.avg_grad = torch.zeros(self.args.zo_batch_size)
+        else:
+            self.stale_grad_matrix = torch.zeros(num_batches, grad_dimen)
+            self.avg_grad = torch.zeros(grad_dimen)
+        if torch.cuda.is_available():
+            self.stale_grad_matrix = self.stale_grad_matrix.cuda()
+            self.avg_grad = self.avg_grad.cuda()
+        self._reset_random_proj_matrix()
+        
+    def report_progress(self):
+        print(self.timer.summary())
+    
+    def _skip_sort_this_epoch(self, epoch):
+        return False
+    
+    def _reset_random_proj_matrix(self):
+        rs = random.randint(0, 10000)
+        self.rp = random_projection.SparseRandomProjection(n_components=self.args.proj_target, random_state=rs)
+    
+    def update_stale_grad(self, model, optimizer, batch_idx, epoch, add_to_avg=True):
+        tensor = None
+        for n, p in model.named_parameters():
+            if len(n.split('.')) >= 4 and n.split('.')[3] == '0':
+                if tensor is None:
+                    tensor = torch.flatten(p.grad.data)
+                else:
+                    tensor = torch.cat(
+                        (tensor, torch.flatten(p.grad.data))
+                    )
+        # tensor = flatten_grad(optimizer)
+        if self.args.use_random_proj:
+            tensor = tensor.cpu()
+            tensor = torch.from_numpy(self.rp.fit_transform(tensor.reshape(1, -1)))
+            tensor = tensor.cuda()
+            self.stale_grad_matrix[batch_idx].copy_(tensor[0])
+            if add_to_avg:
+                self.avg_grad.add_(tensor[0] / self.num_batches)
+        else:
+            self.stale_grad_matrix[batch_idx].copy_(tensor)
+            if add_to_avg:
+                self.avg_grad.add_(tensor / self.num_batches)
+        # make sure the same random matrix is used in one epoch
+        if batch_idx == self.num_batches - 1 and self.args.use_random_proj:
+            self._reset_random_proj_matrix()
+
+    def sort(self, epoch, model, train_batches, optimizer, accelerator, orders=None):
+        if orders is None:
+            orders = {i:0 for i in range(self.num_batches)}
+        if self._skip_sort_this_epoch(epoch):
+            return orders
+        self.avg_grad.zero_()
+        for i in orders.keys():
+            _, batch = train_batches[i]
+            outputs = model(**batch)
+            loss = outputs.loss
+            accelerator.backward(loss)
+            self.update_stale_grad(model,
+                                    optimizer,
+                                    i,
+                                    epoch)
+            optimizer.zero_grad()
+
+        X = self.stale_grad_matrix # .clone()
         cur_sum = torch.zeros_like(self.avg_grad)
         remain_ids = set(range(self.num_batches))
         for i in range(1, self.num_batches+1):

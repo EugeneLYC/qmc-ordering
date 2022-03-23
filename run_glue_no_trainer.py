@@ -180,6 +180,30 @@ def parse_args():
                         choices=['cv', 'nlp'],
                         type=str,
                         help='task type (choose from cv, nlp)')
+    parser.add_argument('--use_random_proj',
+                        default=False,
+                        action='store_true',
+                        help='whether to use projection when doing the greedy sorting (default: True)')
+    
+    parser.add_argument('--use_random_proj_full',
+                        default=False,
+                        action='store_true',
+                        help='whether to use projection after storing all the full-dimension gradients (default: True)')
+    
+    parser.add_argument('--use_qr',
+                        default=False,
+                        action='store_true',
+                        help='whether to use qr_decomposition in the sorting part (default: True)')
+    
+    parser.add_argument('--proj_ratio',
+                        default=0.1,
+                        type=float,
+                        help='decide project how much ratio of the orginal entire model (default: 0.1)')
+
+    parser.add_argument('--proj_target',
+                        default=1024,
+                        type=int,
+                        help='the target dimension for random projection')
     
     
     args = parser.parse_args()
@@ -471,6 +495,18 @@ def main():
                                         dimension,
                                         model=model,
                                         timer=None)
+    elif args.shuffle_type in ['fresh']:
+        dimension = 0
+        for n, p in model.named_parameters():
+            if len(n.split('.')) >= 4 and n.split('.')[3] == '0':
+                dimension += p.numel()
+        # dimension = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        logger.info(f"  Using model dimension = {dimension}")
+        sorter = build_sorter.get_sorter(args,
+                                        train_dataloader,
+                                        dimension,
+                                        model=model,
+                                        timer=None)
     else:
         sorter = None
     
@@ -483,7 +519,10 @@ def main():
         model.train()
         train_batches = list(enumerate(train_dataloader))
         if sorter is not None:
-            orders = sorter.sort(epoch, model, train_batches, optimizer)
+            if args.shuffle_type == 'ZO':
+                orders = sorter.sort(epoch, model, train_batches, optimizer)
+            elif args.shuffle_type == 'fresh':
+                orders = sorter.sort(epoch, model, train_batches, optimizer, accelerator)
         else:
             orders = {i:0 for i in range(len(train_batches))}
         # for step, batch in enumerate(train_dataloader):

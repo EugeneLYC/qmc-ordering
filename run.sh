@@ -1,4 +1,4 @@
-TASK=stsb
+TASK=$3
 
 base_dir=`pwd`
 
