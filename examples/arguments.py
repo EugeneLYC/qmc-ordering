@@ -22,7 +22,7 @@ def get_args():
                         type=str,
                         help='the base directory for dataset')
     
-    parser.add_argument('--workers',
+    parser.add_argument('--num_workers',
                         default=0,
                         type=int,
                         metavar='N',

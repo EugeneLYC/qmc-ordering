@@ -1,3 +1,6 @@
+##############################
+# transforms
+##############################
 _TO_TENSOR_ = "ToTensor"
 _PIL_TO_TENSOR_ = "PILToTensor"
 _CONVERT_IMAGE_DTYPE_ = "ConvertImageDtype"
@@ -32,3 +35,8 @@ _RANDOM_SOLARIZE_ = "RandomSolarize"
 _RANDOM_ADJUST_SHARPNESS_ = "RandomAdjustSharpness"
 _RANDOM_AUTOCONTRAST_ = "RandomAutocontrast"
 _RANDOM_EQUALIZE_ = "RandomEqualize"
+
+##############################
+# Sobol Sequence params
+##############################
+_MAX_SOBOL_SEQ_LEN_ = 2097152
