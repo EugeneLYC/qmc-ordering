@@ -2,6 +2,7 @@ from unicodedata import ucd_3_2_0
 import torch
 import copy
 import random
+import numpy as np
 from sklearn import random_projection
 from .utils import flatten_grad, _load_batch
 
@@ -184,6 +185,41 @@ class FreshGradGreedySort(Sort):
             orders[cur_id] = i
             cur_sum.add_(X[cur_id])
         orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
+        # cur_id = -1
+        # max_norm = float('inf')
+        # for cand_id in remain_ids:
+        #     cand_norm = torch.norm(
+        #         X[cand_id] - self.avg_grad
+        #     ).item()
+        #     if cand_norm < max_norm:
+        #         max_norm = cand_norm
+        #         cur_id = cand_id
+        # X[cur_id], X[0] = X[0], X[cur_id]
+        # for i in range(self.num_batches):
+        #     X[i].add_(-1 * self.avg_grad)
+        # signs = [] # output
+        # w = torch.zeros_like(X[0])
+        # for x in X:
+        #     prob = 0.5 - torch.dot(w, x)
+        #     prob = 0 if prob < 0 else prob
+        #     prob = 1 if prob > 1 else prob
+        #     if prob < 0.5:
+        #         sign = -1
+        #     else:
+        #         sign = 1
+        #     signs.append(sign)
+        #     w = w + sign*x
+
+        # last = self.num_batches
+        # first = 0
+        # for i in range(self.num_batches):
+        #     if signs[i] > 0:
+        #         orders[i] = first
+        #         first += 1
+        #     else:
+        #         orders[i] = last
+        #         last -= 1
+        # orders = {k: v for k, v in sorted(orders.items(), key=lambda item: item[1], reverse=False)}
         return orders
 
 class ZerothOrderGreedySort(Sort):

@@ -16,10 +16,11 @@ def _build_task_name(args):
         task_name = 'QMCDA' + task_name
     if args.shuffle_type == 'ZO':
         task_name = task_name + '_ZOBSZ-' + str(args.zo_batch_size)
-    if args.shuffle_type == 'fresh':
-        task_name = task_name + '_proj-' + str(args.zo_batch_size)
-    if args.shuffle_type == 'greedy' and args.use_random_proj:
-        task_name = task_name + '_proj-' + str(args.proj_target)
+    if args.use_random_proj:
+        if args.shuffle_type == 'fresh':
+            task_name = task_name + '_proj-' + str(args.zo_batch_size)
+        if args.shuffle_type == 'greedy' and args.use_random_proj:
+            task_name = task_name + '_proj-' + str(args.proj_target)
     return task_name
 
 def main():
@@ -60,7 +61,7 @@ def main():
         logger = SummaryWriter(tb_path)
     else:
         logger = None
-
+    
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch
         # if args.use_qmc_da:
@@ -78,7 +79,15 @@ def main():
 
         # evaluate on validation set
         validate(args,
+                loaders['train'],
+                'train',
+                model,
+                criterion,
+                epoch,
+                logger)
+        validate(args,
                 loaders['val'],
+                'val',
                 model,
                 criterion,
                 epoch,

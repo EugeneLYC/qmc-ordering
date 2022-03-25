@@ -56,6 +56,7 @@ def train(args,
     model.train()
     
     train_batches = list(enumerate(train_loader))
+    
     if sorter is not None:
         with timer("sorting", epoch=epoch):
             if args.shuffle_type == _STALE_GRAD_SORT_:
@@ -66,7 +67,7 @@ def train(args,
                 orders = sorter.sort(epoch, model, criterion, train_batches, optimizer)
     else:
         orders = {i:0 for i in range(len(train_batches))}
-
+    
     if args.log_metric:
         compute_avg_grad_error(args,
                             model,
@@ -76,7 +77,7 @@ def train(args,
                             epoch,
                             logger,
                             orders=orders)
-
+    
     for i in orders.keys():
         _, (input, target) = train_batches[i]
         with timer("load batch", epoch=epoch):
@@ -111,22 +112,22 @@ def train(args,
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                       epoch, i, len(train_loader), loss=losses, top1=top1))
-    if args.use_tensorboard:
-        logger.add_scalar('train/accuracy', top1.avg, epoch)
-        logger.add_scalar('train/loss', losses.avg, epoch)
-        total_time = timer.totals["load batch"] + timer.totals["forward pass"] + \
-            timer.totals["backward pass"]
-        if sorter is not None:
-            total_time += timer.totals["sorting"]
-        logger.add_scalar('train_time/accuracy', top1.avg, total_time)
-        logger.add_scalar('train_time/loss', losses.avg, total_time)
+    # if args.use_tensorboard:
+    #     logger.add_scalar('train/accuracy', top1.avg, epoch)
+    #     logger.add_scalar('train/loss', losses.avg, epoch)
+    #     total_time = timer.totals["load batch"] + timer.totals["forward pass"] + \
+    #         timer.totals["backward pass"]
+    #     if sorter is not None:
+    #         total_time += timer.totals["sorting"]
+    #     logger.add_scalar('train_time/accuracy', top1.avg, total_time)
+    #     logger.add_scalar('train_time/loss', losses.avg, total_time)
 
 
     return
 
 
 
-def validate(args, val_loader, model, criterion, epoch, logger):
+def validate(args, val_loader, loader_name, model, criterion, epoch, logger):
     """
     Run evaluation
     """
@@ -158,8 +159,8 @@ def validate(args, val_loader, model, criterion, epoch, logger):
                           i, len(val_loader), loss=losses,
                           top1=top1))
     if args.use_tensorboard:
-        logger.add_scalar('test/accuracy', top1.avg, epoch)
-        logger.add_scalar('test/loss', losses.avg, epoch)
+        logger.add_scalar(loader_name+'/accuracy', top1.avg, epoch)
+        logger.add_scalar(loader_name+'/loss', losses.avg, epoch)
 
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
