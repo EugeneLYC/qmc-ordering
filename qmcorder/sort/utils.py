@@ -1,15 +1,5 @@
 import torch
-from ..constants import _MNIST_
 from sklearn import random_projection
-
-def _load_batch(args, input, target):
-    if args.use_cuda:
-        input = input.cuda()
-        target = target.cuda()
-    if args.dataset == _MNIST_:
-        # additionally reshaping the mnist input for compatability
-        input = input.reshape(-1, 784)
-    return input, target
 
 def random_proj(data):
     rp = random_projection.SparseRandomProjection(random_state=1)
@@ -18,10 +8,10 @@ def random_proj(data):
 def compute_avg_grad_error(args,
                         model,
                         train_batches,
-                        criterion,
                         optimizer,
                         epoch,
-                        logger,
+                        tb_logger,
+                        oracle_type='cv',
                         orders=None):
     grads = dict()
     for i in range(len(train_batches)):
@@ -30,12 +20,13 @@ def compute_avg_grad_error(args,
     if orders is None:
         orders = {i:0 for i in range(len(train_batches))}
     for j in orders.keys():
-        i, (input, target) = train_batches[j]
-        input_var, target_var = _load_batch(args, input, target)
-        output = model(input_var)
-        loss = criterion(output, target_var)
-        optimizer.zero_grad()
-        loss.backward()
+        i, batch = train_batches[j]
+        if oracle_type == 'cv':
+            loss, _, _ = model(batch)
+            optimizer.zero_grad()
+            loss.backward()
+        else:
+            raise NotImplementedError
         grads[i] = flatten_grad(optimizer)
         full_grad.add_(grads[i])
     cur_grad = flatten_params(model).zero_()
@@ -47,7 +38,7 @@ def compute_avg_grad_error(args,
             p1.data.add_(p2.data)
             cur_var += torch.norm(p1.data/(index+1) - p3.data/len(train_batches)).item()**2
         index += 1
-    logger.add_scalar('train/metric', cur_var, epoch)
+    tb_logger.add_scalar('train/metric', cur_var, epoch)
 
 def flatten_grad(optimizer):
     t = None

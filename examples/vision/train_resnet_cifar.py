@@ -2,14 +2,18 @@ import os
 import random
 import torch
 import logging
+import torchvision.datasets as datasets
 from tensorboardX import SummaryWriter
 
 from models import resnet
 from arguments import get_args
-from utils import _load_batch, _inference, _backward, train, validate, Timer
+from utils import train, validate, Timer, build_task_name
+from constants import _RANDOM_RESHUFFLING_, _SHUFFLE_ONCE_, _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, \
+    _CIFAR10_, _CIFAR100_
 
+import sys
+sys.path = ['../../'] + sys.path
 from qmcorder.qmcda.datasets import Dataset
-from constants import _RANDOM_RESHUFFLING_, _SHUFFLE_ONCE_, _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +70,8 @@ def main():
     # QMC-based data augmentation
 
     loaders = {}
+    shuffle_flag = True if args.shuffle_type in [_RANDOM_RESHUFFLING_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_] else False
+    data_path = os.path.join(args.data_path, "data")
     if args.dataset == _CIFAR10_:
         trainset = Dataset(dataset=datasets.CIFAR10(root=data_path, train=True, download=True),
                             train=True,
@@ -99,29 +105,30 @@ def main():
         sorter = None
         logger.info(f"Not using any sorting algorithm.")
     else:
-        logger.info(f"Creating sorting algorithm: {args.shuffle_type}.")
-        num_batches = len(list(enumerate(loader)))
+        grad_dimen = int(args.proj_ratio * model_dimen) if args.use_random_proj else model_dimen
+        num_batches = len(list(enumerate(loaders['train'])))
         if args.shuffle_type == _STALE_GRAD_SORT_:
             from qmcorder.sort.algo import StaleGradGreedySort
             sorter = StaleGradGreedySort(args,
                                         num_batches,
-                                        grad_dimen=dimension,
+                                        grad_dimen=grad_dimen,
                                         timer=timer)
         elif args.shuffle_type == _ZEROTH_ORDER_SORT_:
             from qmcorder.sort.algo import ZerothOrderGreedySort
             sorter = ZerothOrderGreedySort(args,
                                         num_batches,
-                                        grad_dimen=dimension,
+                                        grad_dimen=grad_dimen,
                                         model=model,
                                         timer=timer)
         elif args.shuffle_type == _FRESH_GRAD_SORT_:
             from qmcorder.sort.algo import FreshGradGreedySort
             sorter = FreshGradGreedySort(args,
                                         num_batches,
-                                        grad_dimen=dimension,
+                                        grad_dimen=grad_dimen,
                                         timer=timer)
         else:
             raise NotImplementedError("This sorting method is not supported yet")
+        logger.info(f"Creating sorting algorithm: {args.shuffle_type}.")
 
     args.task_name = build_task_name(args)
     logger.info(f"Creating task name as: {args.task_name}.")
@@ -135,7 +142,7 @@ def main():
         logger.info(f"Disable tensorboard logs currently.")
 
     for epoch in range(args.start_epoch, args.epochs):
-        train(args=rgs,
+        train(args=args,
             loader=loaders['train'],
             model=model,
             criterion=criterion,

@@ -1,14 +1,14 @@
 import os
-import lmdb
 import torch
 import time
 import pickle
+import logging
 from contextlib import contextmanager
 from io import StringIO
-from .constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_
-from .sort.utils import _load_batch, compute_avg_grad_error
+from .constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _MNIST_
+from qmcorder.sort.utils import compute_avg_grad_error
 
-def _build_task_name(args):
+def build_task_name(args):
     task_name = 'MODEL-' + args.model + \
                 '_DATA-' + args.dataset + \
                 '_SFTYPE-' + args.shuffle_type + \
@@ -40,39 +40,6 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-def accuracy(output, target, topk=(1,)):
-    """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
-    batch_size = target.size(0)
-
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-    res = []
-    for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
-        res.append(correct_k.mul_(100.0 / batch_size))
-    return res
-
-def _load_batch(use_cuda, input, target):
-    if use_cuda:
-        input = input.cuda()
-        target = target.cuda()
-    return input, target
-
-def _inference(use_cuda, model, batch, **kwargs):
-    input, target = batch
-    input_var, target_var = _load_batch(use_cuda, input, target)
-    output = model(input_var)
-    loss = criterion(output, target_var)
-    return loss, output, target_var
-
-def _backward(optimizer, loss):
-    # compute gradient and do SGD step
-    optimizer.zero_grad()
-    loss.backward()
-
 def train(args,
         loader,
         model,
@@ -90,12 +57,21 @@ def train(args,
     train_batches = list(enumerate(loader))
     if sorter is not None:
         with timer("sorting", epoch=epoch):
-            orders = sorter.sort(epoch,
-                                inference=_inference,
-                                backward=_backward,
-                                model=model,
-                                optimizer=optimizer,
-                                train_batches=train_batches)
+            if args.shuffle_type == _STALE_GRAD_SORT_:
+                orders = sorter.sort(epoch)
+            elif args.shuffle_type == _FRESH_GRAD_SORT_:
+                orders = sorter.sort(epoch=epoch,
+                                    model=model,
+                                    train_batches=train_batches,
+                                    optimizer=optimizer,
+                                    oracle_type='cv')
+            elif args.shuffle_type == _ZEROTH_ORDER_SORT_:
+                orders = sorter.sort(epoch=epoch,
+                                    model=model,
+                                    train_batches=train_batches,
+                                    oracle_type='cv')
+            else:
+                raise NotImplementedError
     else:
         orders = {i:0 for i in range(len(train_batches))}
 
@@ -103,40 +79,45 @@ def train(args,
         compute_avg_grad_error(args,
                             model,
                             train_batches,
-                            criterion,
                             optimizer,
                             epoch,
-                            logger,
+                            tb_logger,
+                            oracle_type='cv',
                             orders=orders)
-        logger.warning(f"Logging the average gradient error. This is only for monitoring and will slow down training, please remove --log_metric for full-speed training.")
+        logging.warning(f"Logging the average gradient error. \
+            This is only for monitoring and will slow down training, \
+                please remove --log_metric for full-speed training.")
 
     for i in orders.keys():
         _, batch = train_batches[i]
         with timer("forward pass", epoch=epoch):
-            loss, output, target_var = _inference(args.use_cuda, model, batch, criterion=criterion)
+            loss, prec1, cur_batch_size = model(batch)
         with timer("backward pass", epoch=epoch):
-            _backward(optimizer, loss)
+            optimizer.zero_grad()
+            loss.backward()
 
         if sorter is not None and args.shuffle_type == _STALE_GRAD_SORT_:
             with timer("sorting", epoch=epoch):
-                sorter.update_stale_grad(optimizer, i, epoch)
-            logger.info(f"Storing the staled gradient used in StaleGradGreedySort method.")
+                sorter.update_stale_grad(optimizer=optimizer,
+                                        batch_idx=i,
+                                        epoch=epoch)
+            logging.info(f"Storing the staled gradient used in StaleGradGreedySort method.")
         
         with timer("backward pass", epoch=epoch):
             optimizer.step()
 
-        loss, output = loss.float(), output.float()
+        loss = loss.float()
 
         # measure accuracy and record loss
-        prec1 = accuracy(output.data, target_var)[0]
-        losses.update(loss.item(), batch[0].size(0))
-        top1.update(prec1.item(), batch[0].size(0))
+        losses.update(loss.item(), cur_batch_size)
+        top1.update(prec1.item(), cur_batch_size)
 
         if i % args.print_freq == 0:
             logging.info('Epoch: [{0}][{1}/{2}]\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                       epoch, i, len(loader), loss=losses, top1=top1))
+    
     if args.use_tensorboard:
         tb_logger.add_scalar('train/accuracy', top1.avg, epoch)
         tb_logger.add_scalar('train/loss', losses.avg, epoch)
@@ -145,6 +126,7 @@ def train(args,
             total_time += timer.totals["sorting"]
         tb_logger.add_scalar('train_time/accuracy', top1.avg, total_time)
         tb_logger.add_scalar('train_time/loss', losses.avg, total_time)
+    
     return
 
 def validate(args, loader, model, criterion, epoch, tb_logger):
@@ -158,13 +140,12 @@ def validate(args, loader, model, criterion, epoch, tb_logger):
     model.eval()
     with torch.no_grad():
         for i, batch in enumerate(loader):
-            loss, output, target_var = _inference(args.use_cuda, model, batch)
-            loss, output = loss.float(), output.float()
+            loss, prec1, cur_batch_size = model(batch)
+            loss = loss.float()
 
             # measure accuracy and record loss
-            prec1 = accuracy(output.data, target_var)[0]
-            losses.update(loss.item(), batch[0].size(0))
-            top1.update(prec1.item(), batch[0].size(0))
+            losses.update(loss.item(), cur_batch_size)
+            top1.update(prec1.item(), cur_batch_size)
 
             if i % args.print_freq == 0:
                 print('Test: [{0}/{1}]\t'
@@ -310,6 +291,7 @@ def dumps_data(obj):
 
 ## Helper functions for ImageNet
 def folder2lmdb(spath, dpath, name="train", write_frequency=5000):
+    import lmdb
     directory = os.path.expanduser(os.path.join(spath, name))
     from torch.utils.data import DataLoader
     from torchvision.datasets import ImageFolder

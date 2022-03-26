@@ -1,5 +1,3 @@
-import json
-from .transforms import QMCTransforms
 from .constants import _TO_TENSOR_,  _PIL_TO_TENSOR_, _CONVERT_IMAGE_DTYPE_, _TO_PIL_IMAGE_, \
     _NORMALIZE_, _RESIZE_, _CENTER_CROP_, _PAD_, _LAMBDA_, _RANDOM_APPLY_, _RANDOM_CHOICE_, \
     _RANDOM_ORDER_, _RANDOM_CROP_, _RANDOM_HORIZONTAL_FLIP_, _RANDOM_VERTICAL_FLIP_, _RANDOM_RESIZED_CROP_, \
@@ -214,6 +212,7 @@ def get_qmc_transforms(config):
         else:
             raise NotImplementedError("This transform method: {} is not supported.".format(key))
     
+    from .transforms import QMCTransforms
     qmc_transforms = QMCTransforms(
         transforms=transforms,
         qmc_quotas=qmc_quotas
@@ -393,6 +392,7 @@ def get_uniform_transforms(config):
         else:
             raise NotImplementedError("This transform method: {} is not supported.".format(key))
     
+    import torchvision
     transforms = torchvision.transforms.Compose(transforms)
     
     return transforms

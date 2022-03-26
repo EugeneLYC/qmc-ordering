@@ -2,6 +2,7 @@ import os
 import six
 import math
 import lmdb
+import json
 import pickle
 
 from PIL import Image
@@ -74,7 +75,7 @@ class Dataset:
         if self.need_hash:
             self.hash_base = self.seq_len - self.args.epochs
         self.sobolseq = torch.quasirandom.SobolEngine(dimension=self.qmc_dimension,
-                                                    scramble=args.scramble).draw(self.seq_len)
+                                                    scramble=self.args.scramble).draw(self.seq_len)
 
     def update_sobol(self):
         self.cur_batch += 1
