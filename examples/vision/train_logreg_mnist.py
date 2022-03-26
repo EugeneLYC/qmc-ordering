@@ -31,18 +31,18 @@ def main():
     timer = Timer(verbosity_level=1, use_cuda=args.use_cuda)
 
     criterion = torch.nn.CrossEntropyLoss()
-    if args.use_cuda():
+    if args.use_cuda:
         criterion.cuda()
     logger.info(f"Using Cross Entropy Loss for classification.")
 
-    model = torch.nn.DataParallel(resnet.__dict__[args.model]())
+    model = torch.nn.DataParallel(torch.nn.Linear(784, 10))
     if args.use_cuda:
         model.cuda()
     model_dimen = sum(p.numel() for p in model.parameters() if p.requires_grad)
     model = VisionModel(args, model, criterion)
     logger.info(f"Using model: {args.model} with dimension: {model_dimen}.")
 
-    optimizer = torch.optim.SGD(params=model.parameters(),
+    optimizer = torch.optim.SGD(params=model.model.parameters(),
                                 lr=args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)

@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="QMC-order model training",
+    name="qmcorder",
     version="0.0.1",
     author="Yucheng Lu",
     author_email="yl2967@cornell.edu",
@@ -20,7 +20,7 @@ setuptools.setup(
         "License :: OSI Approved :: Apache License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "qmcorder"},
-    packages=setuptools.find_packages(where="qmcorder"),
+    package_dir={"": "src"},
+    packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
 )

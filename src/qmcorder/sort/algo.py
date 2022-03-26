@@ -2,7 +2,7 @@ import torch
 import copy
 import random
 from sklearn import random_projection
-from .utils import flatten_grad, _load_batch
+from .utils import flatten_grad
 
 class Sort:
     def sort(self, orders):

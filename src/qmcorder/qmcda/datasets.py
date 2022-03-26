@@ -11,7 +11,7 @@ import torch
 import torch.utils.data as data
 from torchvision.transforms import functional as F
 
-from constants import _MAX_SOBOL_SEQ_LEN_
+from .constants import _MAX_SOBOL_SEQ_LEN_
 
 def unit_interval_to_categorical(x, K):
     c = int(math.floor(K * float(x)))
@@ -58,11 +58,11 @@ class Dataset:
         if 'use_qmc' not in config.keys() or 'use_qmc' in config.keys() and config['use_qmc'] is False:
             self.use_qmc = False
         if self.train and self.use_qmc:
-            from utils import get_qmc_transforms
+            from .utils import get_qmc_transforms
             self.transforms, self.qmc_quotas = get_qmc_transforms(config['train_transforms'])
             self.qmc_dimension = sum(self.qmc_quotas)
         else:
-            from utils import get_uniform_transforms
+            from .utils import get_uniform_transforms
             self.transforms = get_uniform_transforms(config['test_transforms'])
     
     def _setup_sobol_engine(self):

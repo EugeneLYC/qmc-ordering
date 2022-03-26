@@ -4,11 +4,13 @@
 *.out
 *.log
 *__pycache__/
+build/
 data/
 *.edu
 *.so
 *.sub
 *.nfs*
+*.egg-info
 
 # Dev/IDE data
 .code-workspace

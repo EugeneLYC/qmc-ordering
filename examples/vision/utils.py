@@ -5,7 +5,7 @@ import pickle
 import logging
 from contextlib import contextmanager
 from io import StringIO
-from .constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _MNIST_
+from constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _MNIST_
 from qmcorder.sort.utils import compute_avg_grad_error
 
 def build_task_name(args):
