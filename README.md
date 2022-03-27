@@ -83,16 +83,16 @@ Users can then specify their own transforms (with order preserved). As an exampl
     }
 }
 ```
-and pass to the training script via `--transforms_json`. Then the QMC-sampling-enabled dataset can be created via `QMCDataset`. Concretely, take CIFAR10,
+and pass to the training script via `--transforms_json`. Then the QMC-sampling-enabled dataset can be created via `Dataset`. Concretely, take CIFAR10,
 ```python
 import torch
-from qmcordering.qmcda.datasets import Dataset
+from qmcorder.qmcda.datasets import Dataset
 
-trainset = Dataset(dataset=datasets.CIFAR100(root=data_path, train=True, download=True),
-                            train=True,
-                            args=args)
-trainloader = torch.utils.data.DataLoader(trainset),
-                                        ...)
+trainset = Dataset(dataset=datasets.CIFAR10(root=data_path, train=True, download=True),
+                    train=True,
+                    args=args)
+trainloader = torch.utils.data.DataLoader(trainset,
+                                            ...)
 ```
 For more details, please refer to [the dataloader script](https://github.com/EugeneLYC/qmc-ordering/blob/main/qmcordering/build_dataloader.py).
 
