@@ -38,7 +38,7 @@ pip install -r requirements.txt
 One of the key insights from our [paper](https://openreview.net/pdf?id=7gWSJrP3opB) is that: if the examples are ordered in a way such that the averages of consecutive example gradients converge faster to the full gradient, then running SGD with such ordering will enjoy a faster convergence rate.
 Given this insight, we propose a greedy selection algorithm that can minimize a metric named *Averaged Gradient Error* ([Equation 2](https://openreview.net/pdf?id=7gWSJrP3opB)), which allows us to use better example ordering at the beginning of each epoch. 
 
-Detailed pseudo-code can be found in Algorithm 1 in our [paper](https://openreview.net/pdf?id=7gWSJrP3opB). Informally, we store the gradients computed for each mini-batch from the previous epoch, and then launch a sorting process over these gradients. To optimize the space/time complexity for the sorting, we additionally provide techniques of random projection and QR decomposition. An example script is provided in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) to train logistic regression with greedy sorting on MNIST. We can run it with
+Detailed pseudo-code can be found in Algorithm 1 in our [paper](https://openreview.net/pdf?id=7gWSJrP3opB). Informally, we store the gradients computed for each mini-batch from the previous epoch, and then launch a sorting process over these gradients. To optimize the space/time complexity for the sorting, we additionally provide techniques of random projection and QR decomposition. An example script is provided in [examples/vision](https://github.com/EugeneLYC/qmc-ordering/tree/release/examples/vision) to train logistic regression with greedy sorting on MNIST. We can run it with
 ```
 bash lg_mnist.sh
 ```
@@ -49,7 +49,7 @@ We provide the source code (in [Julia](https://julialang.org/)) for reproducing 
 
 ## 3. QMC-based Data Augmentation
 ### 3.1 Examples from the paper
-The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Traditional methods augment data in a uniform fashion. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). An example script is provided in [commands](https://github.com/EugeneLYC/qmc-ordering/tree/main/commands) to train Resnet20 on CIFAR10 with QMC-based data augmentation. We can run it with
+The rationale for data augmentation is that by performing some reasonable random transformation on a given example, we assume the output would be another example that is identically distributed, and the expected value models an infinitely-large training set consisting of such transformed examples. Traditional methods augment data in a uniform fashion. Leveraging our insight from the greedy algorithm, we apply QMC points in data augmentation and expect the optimizer would converge faster to the population distribution (i.e., better generalization). An example script is provided in [examples/vision](https://github.com/EugeneLYC/qmc-ordering/tree/release/examples/vision) to train Resnet20 on CIFAR10 with QMC-based data augmentation. We can run it with
 ```bash
 bash resnet20_cifar10.sh
 ```
@@ -94,7 +94,7 @@ trainset = Dataset(dataset=datasets.CIFAR10(root=data_path, train=True, download
 trainloader = torch.utils.data.DataLoader(trainset,
                                             ...)
 ```
-For more details, please refer to [the dataloader script](https://github.com/EugeneLYC/qmc-ordering/blob/main/qmcordering/build_dataloader.py).
+For more details, please refer to the [examples repo](https://github.com/EugeneLYC/qmc-ordering/tree/release/examples).
 
 ### 3.3 Empirical Results
 ![sort-image](docs/assets/images/qmc.jpeg)
