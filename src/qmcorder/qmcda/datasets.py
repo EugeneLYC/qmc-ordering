@@ -42,7 +42,8 @@ class Dataset:
         self.batch_per_epoch = math.ceil(self.size / self.args.batch_size)
 
         self._setup_transforms()
-        self._setup_sobol_engine()
+        if self.use_qmc:
+            self._setup_sobol_engine()
 
         self.cur_batch = 0
         self.epoch = self.args.start_epoch
@@ -55,7 +56,7 @@ class Dataset:
             open(self.args.transforms_json, 'r', encoding='utf-8'))
         self._sanity_check(config)
         self.use_qmc = True
-        if 'use_qmc' not in config.keys() or 'use_qmc' in config.keys() and config['use_qmc'] is False:
+        if 'use_qmc' not in config.keys() or 'use_qmc' in config.keys() and config['use_qmc'] is False or self.train is False:
             self.use_qmc = False
         if self.train and self.use_qmc:
             from .utils import get_qmc_transforms

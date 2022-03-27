@@ -1,13 +1,29 @@
 {
-    "RandomResizedCrop": {
-        "size": 224
+    "use_qmc": true,
+    "train_transforms": {
+        "RandomResizedCrop": {
+            "size": 224
+        },
+        "RandomHorizontalFlip": {
+            "p": 0.5
+        },
+        "ToTensor": {},
+        "Normalize": {
+            "mean": [0.485, 0.456, 0.406],
+            "std": [0.229, 0.224, 0.225]
+        }
     },
-    "RandomHorizontalFlip": {
-        "p": 0.5
-    },
-    "ToTensor": {},
-    "Normalize": {
-        "mean": [0.485, 0.456, 0.406],
-        "std": [0.229, 0.224, 0.225]
+    "test_transforms": {
+        "Resize": {
+            "size": 256
+        },
+        "CenterCrop": {
+            "size": 224
+        },
+        "ToTensor": {},
+        "Normalize": {
+            "mean": [0.485, 0.456, 0.406],
+            "std": [0.229, 0.224, 0.225]
+        }
     }
 }

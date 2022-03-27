@@ -42,7 +42,7 @@ def main():
     model = VisionModel(args, model, criterion)
     logger.info(f"Using model: {args.model} with dimension: {model_dimen}.")
 
-    optimizer = torch.optim.SGD(params=model.model.parameters(),
+    optimizer = torch.optim.SGD(params=model.parameters(),
                                 lr=args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)

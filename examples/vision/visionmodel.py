@@ -34,3 +34,12 @@ class VisionModel:
         prec1 = accuracy(output.data, target_var)[0]
         
         return loss, prec1, input_var.size(0)
+    
+    def parameters(self):
+        return self.model.parameters()
+    
+    def train(self):
+        self.model.train()
+    
+    def eval(self):
+        self.model.eval()

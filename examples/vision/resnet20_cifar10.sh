@@ -7,7 +7,7 @@ stype=RR
 
 base_dir=`pwd`
 
-run_cmd="python3 main.py --model=${model} \
+run_cmd="python train_resnet_cifar.py --model=${model} \
         --dataset=${dataset} \
         --data_path=${base_dir} \
         --epochs=${epochs} \
@@ -18,7 +18,7 @@ run_cmd="python3 main.py --model=${model} \
         --weight_decay=1e-4 \
         --use_tensorboard \
         --tensorboard_path=${base_dir} \
-        --workers=4 \
+        --num_workers=4 \
         --use_qmc_da \
         --transforms_json=${base_dir}/jsons/cifar10.json
         "

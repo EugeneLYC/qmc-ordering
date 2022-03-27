@@ -3,9 +3,11 @@ import torch
 import time
 import pickle
 import logging
+import lmdb
 from contextlib import contextmanager
 from io import StringIO
 from constants import _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, _MNIST_
+import torch.utils.data as data
 from qmcorder.sort.utils import compute_avg_grad_error
 
 def build_task_name(args):
@@ -113,7 +115,7 @@ def train(args,
         top1.update(prec1.item(), cur_batch_size)
 
         if i % args.print_freq == 0:
-            logging.info('Epoch: [{0}][{1}/{2}]\t'
+            print('Epoch: [{0}][{1}/{2}]\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                       epoch, i, len(loader), loss=losses, top1=top1))
@@ -157,7 +159,7 @@ def validate(args, loader, model, criterion, epoch, tb_logger):
         tb_logger.add_scalar('test/accuracy', top1.avg, epoch)
         tb_logger.add_scalar('test/loss', losses.avg, epoch)
 
-    logging.info(' * Prec@1 {top1.avg:.3f}'.format(top1=top1))
+    print(' * Prec@1 {top1.avg:.3f}'.format(top1=top1))
 
     return
 
@@ -291,7 +293,6 @@ def dumps_data(obj):
 
 ## Helper functions for ImageNet
 def folder2lmdb(spath, dpath, name="train", write_frequency=5000):
-    import lmdb
     directory = os.path.expanduser(os.path.join(spath, name))
     from torch.utils.data import DataLoader
     from torchvision.datasets import ImageFolder
@@ -325,3 +326,51 @@ def folder2lmdb(spath, dpath, name="train", write_frequency=5000):
     print("Flushing database ...")
     db.sync()
     db.close()
+
+class ImageFolderLMDB(data.Dataset):
+    def __init__(self, db_path, transform=None, target_transform=None):
+        self.db_path = db_path
+        self.env = lmdb.open(db_path, subdir=os.path.isdir(db_path),
+                             readonly=True, lock=False,
+                             readahead=False, meminit=False)
+        with self.env.begin(write=False) as txn:
+            self.length = loads_data(txn.get(b'__len__'))
+            self.keys = loads_data(txn.get(b'__keys__'))
+
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        env = self.env
+        with env.begin(write=False) as txn:
+            byteflow = txn.get(self.keys[index])
+
+        unpacked = loads_data(byteflow)
+
+        # load img
+        imgbuf = unpacked[0]
+        buf = six.BytesIO()
+        buf.write(imgbuf)
+        buf.seek(0)
+        img = Image.open(buf).convert('RGB')
+
+        # load label
+        target = unpacked[1]
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        # im2arr = np.array(img)
+        # im2arr = torch.from_numpy(im2arr)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target
+        # return im2arr, target
+
+    def __len__(self):
+        return self.length
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + self.db_path + ')'

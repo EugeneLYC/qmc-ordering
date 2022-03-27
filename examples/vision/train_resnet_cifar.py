@@ -6,13 +6,12 @@ import torchvision.datasets as datasets
 from tensorboardX import SummaryWriter
 
 from models import resnet
+from visionmodel import VisionModel
 from arguments import get_args
 from utils import train, validate, Timer, build_task_name
 from constants import _RANDOM_RESHUFFLING_, _SHUFFLE_ONCE_, _STALE_GRAD_SORT_, _ZEROTH_ORDER_SORT_, _FRESH_GRAD_SORT_, \
     _CIFAR10_, _CIFAR100_
 
-import sys
-sys.path = ['../../'] + sys.path
 from qmcorder.qmcda.datasets import Dataset
 
 logger = logging.getLogger(__name__)
@@ -32,16 +31,17 @@ def main():
 
     timer = Timer(verbosity_level=1, use_cuda=args.use_cuda)
 
+    criterion = torch.nn.CrossEntropyLoss()
+    if args.use_cuda:
+        criterion.cuda()
+    logger.info(f"Using Cross Entropy Loss for classification.")
+
     model = torch.nn.DataParallel(resnet.__dict__[args.model]())
     if args.use_cuda:
         model.cuda()
     model_dimen = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    model = VisionModel(args, model, criterion)
     logger.info(f"Using model: {args.model} with dimension: {model_dimen}.")
-
-    criterion = torch.nn.CrossEntropyLoss()
-    if args.use_cuda():
-        criterion.cuda()
-    logger.info(f"Using Cross Entropy Loss for classification.")
 
     optimizer = torch.optim.SGD(params=model.parameters(),
                                 lr=args.lr,
