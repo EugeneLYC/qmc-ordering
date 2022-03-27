@@ -64,7 +64,10 @@ class Dataset:
             self.qmc_dimension = sum(self.qmc_quotas)
         else:
             from .utils import get_uniform_transforms
-            self.transforms = get_uniform_transforms(config['test_transforms'])
+            if self.train:
+                self.transforms = get_uniform_transforms(config['train_transforms'])
+            else:
+                self.transforms = get_uniform_transforms(config['test_transforms'])
     
     def _setup_sobol_engine(self):
         self.seq_len = 2**(int(math.ceil(

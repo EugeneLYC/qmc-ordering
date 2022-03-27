@@ -42,6 +42,12 @@ Detailed pseudo-code can be found in Algorithm 1 in our [paper](https://openrevi
 ```
 bash lg_mnist.sh
 ```
+The sorting algorithm can be changed with `--shuffle_type`. Currently the following shuffling strategies are supported:
+
+* `random_reshuffling`: the standard way of randomly shuffle the training data at the beginning of each epoch.
+* `shuffle_once`: only shuffle the dataset at the beginning of the first epoch.
+* `stale_grad_greedy_sort`: sort the examples using the gradients computed from the previous epoch.
+* `fresh_grad_greedy_sort`: sort the examples using the fresh gradients computed at the beginning of the epoch.
 
 ### 2.2 Toy Example on synthetic Gaussian
 We provide the source code (in [Julia](https://julialang.org/)) for reproducing the toy example of Gaussion ([Figure 1](https://openreview.net/pdf?id=7gWSJrP3opB)) in the [toy_gaussian repo](https://github.com/EugeneLYC/qmc-ordering/tree/main/toy_gaussian).

@@ -105,10 +105,10 @@ def get_args():
 
     # greedy method related arguments
     parser.add_argument('--shuffle_type',
-                        default='RR',
-                        choices=['RR', 'SO', 'greedy', 'ZO', 'fresh'],
+                        default='random_reshuffling',
+                        choices=['random_reshuffling', 'shuffle_once', 'stale_grad_greedy_sort', 'fresh_grad_greedy_sort'],
                         type=str,
-                        help='shuffle type used for the optimization (choose from RR, SO, greedy, ZO, fresh)')
+                        help='shuffle type used for the optimization (choose from random_reshuffling, shuffle_once, stale_grad_greedy_sort, fresh_grad_greedy_sort)')
     
     parser.add_argument('--task_name',
                         default='test',

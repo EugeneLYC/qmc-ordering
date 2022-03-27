@@ -7,6 +7,7 @@
 build/
 dist/
 data/
+runs/
 *.edu
 *.so
 *.sub

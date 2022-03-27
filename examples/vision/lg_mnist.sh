@@ -3,7 +3,7 @@ dataset=mnist
 epochs=100
 bsz=64
 lr=0.01
-stype=fresh
+stype=fresh_grad_greedy_sort
 
 base_dir=`pwd`
 
